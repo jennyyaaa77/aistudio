@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<title>AI Team Workbench · 团队智能百宝箱工作台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:#0a0a1a;color:#e2e8f0;min-height:100vh;overflow-x:hidden}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:rgba(255,255,255,0.03)}
+::-webkit-scrollbar-thumb{background:rgba(123,47,247,0.4);border-radius:3px}
+
+/* ===== ANIMATIONS ===== */
+@keyframes cyberPulse{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,0.4)}70%{box-shadow:0 0 0 6px rgba(52,211,153,0)}}
+@keyframes gridMove{0%{background-position:0 0}100%{background-position:50px 50px}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes toastIn{from{opacity:0;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(100%)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+@keyframes floatUp{0%{transform:translateY(0)}50%{transform:translateY(-8px)}100%{transform:translateY(0)}}
+
+.cyber-pulse{animation:cyberPulse 2s infinite}
+.fade-in{animation:fadeIn 0.4s ease both}
+.fade-in-up{animation:fadeInUp 0.4s ease both}
+
+/* ===== GLASS ===== */
+.glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.08)}
+.glass-card{background:rgba(15,10,40,0.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+
+/* ===== GRADIENT BORDER ===== */
+.grad-border{border:1px solid transparent;background-clip:padding-box}
+
+/* ===== TOAST ===== */
+#toast-container{position:fixed;top:80px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;font-size:13px;font-weight:500;backdrop-filter:blur(16px);min-width:240px;max-width:360px;pointer-events:auto;animation:toastIn 0.3s ease}
+.toast.success{background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.35);color:#34d399}
+.toast.warning{background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.35);color:#fbbf24}
+.toast.error{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#f87171}
+.toast.info{background:rgba(0,210,255,0.12);border:1px solid rgba(0,210,255,0.3);color:#00d2ff}
+.toast.leaving{animation:toastOut 0.3s ease forwards}
+
+/* ===== NAV ===== */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(10,10,26,0.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06)}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-logo-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#7b2ff7,#0065ff);display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav-logo-text{font-weight:700;font-size:15px;background:linear-gradient(135deg,#e2e8f0,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;align-items:center;gap:24px;font-size:14px}
+.nav-links a{color:rgba(226,232,240,0.6);text-decoration:none;transition:color 0.2s}
+.nav-links a:hover{color:#00d2ff}
+.btn-submit-tool{padding:8px 16px;border-radius:10px;background:linear-gradient(135deg,#7b2ff7,#0065ff);color:white;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.2s}
+.btn-submit-tool:hover{opacity:0.88}
+.nav-mobile-btn{display:none;background:none;border:none;color:white;font-size:20px;cursor:pointer}
+.mobile-menu{display:none;position:fixed;top:60px;left:0;right:0;background:rgba(10,10,26,0.97);padding:16px;z-index:99;border-bottom:1px solid rgba(255,255,255,0.08)}
+.mobile-menu a{display:block;padding:10px 0;color:rgba(226,232,240,0.7);text-decoration:none;font-size:14px}
+.mobile-menu.open{display:block;animation:slideDown 0.2s ease}
+
+/* ===== HERO ===== */
+#hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding-top:60px}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(123,47,247,0.08) 1px,transparent 1px),linear-gradient(90deg,rgba(123,47,247,0.08) 1px,transparent 1px);background-size:50px 50px;animation:gridMove 8s linear infinite;pointer-events:none}
+.hero-orb1{position:absolute;top:10%;left:5%;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(123,47,247,0.18) 0%,transparent 70%);filter:blur(40px);pointer-events:none}
+.hero-orb2{position:absolute;bottom:15%;right:5%;width:350px;height:350px;border-radius:50%;background:radial-gradient(circle,rgba(0,210,255,0.12) 0%,transparent 70%);filter:blur(40px);pointer-events:none}
+.hero-content{position:relative;text-align:center;max-width:720px;padding:0 24px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:100px;background:rgba(123,47,247,0.15);border:1px solid rgba(123,47,247,0.35);font-size:12px;color:#a78bfa;margin-bottom:28px}
+.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:#7b2ff7;animation:blink 1.5s infinite}
+.hero-title{font-size:clamp(36px,6vw,64px);font-weight:800;line-height:1.1;margin-bottom:20px;background:linear-gradient(135deg,#ffffff 0%,#a78bfa 50%,#00d2ff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{font-size:16px;color:rgba(226,232,240,0.55);margin-bottom:40px;line-height:1.7}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{padding:14px 32px;border-radius:14px;background:linear-gradient(135deg,#7b2ff7,#0065ff);color:white;border:none;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover{opacity:0.88;transform:translateY(-1px)}
+.btn-secondary{padding:14px 32px;border-radius:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:rgba(226,232,240,0.8);font-size:15px;font-weight:500;cursor:pointer;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.btn-secondary:hover{background:rgba(255,255,255,0.1)}
+.hero-stats{display:flex;gap:40px;justify-content:center;margin-top:52px;padding-top:40px;border-top:1px solid rgba(255,255,255,0.06)}
+.hero-stat-num{font-size:28px;font-weight:800;background:linear-gradient(135deg,#00d2ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-stat-label{font-size:12px;color:rgba(226,232,240,0.4);margin-top:2px}
+
+/* ===== SECTION ===== */
+.section{padding:96px 24px}
+.section-header{text-align:center;margin-bottom:56px}
+.section-tag{display:inline-block;padding:4px 14px;border-radius:100px;background:rgba(123,47,247,0.15);border:1px solid rgba(123,47,247,0.3);font-size:11px;color:#a78bfa;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px}
+.section-title{font-size:clamp(28px,4vw,40px);font-weight:800;margin-bottom:12px;background:linear-gradient(135deg,#e2e8f0,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.section-sub{font-size:15px;color:rgba(226,232,240,0.45);max-width:500px;margin:0 auto}
+
+/* ===== STATS CARDS ===== */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:48px}
+.stat-card{border-radius:20px;padding:24px;position:relative;overflow:hidden;cursor:default;transition:all 0.3s}
+.stat-card:hover{transform:translateY(-2px)}
+.stat-card-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
+.stat-card-delta{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:100px;font-size:11px;font-weight:600}
+.stat-card-num{font-size:30px;font-weight:800;margin:6px 0 4px}
+.stat-card-label{font-size:13px;color:rgba(226,232,240,0.5)}
+.stat-card-unit{font-size:14px;font-weight:400;margin-left:2px}
+
+/* ===== AGENT SECTION ===== */
+#agent{background:rgba(5,5,20,0.6)}
+.agent-inner{max-width:900px;margin:0 auto}
+.agent-search-box{border-radius:20px;overflow:hidden;background:rgba(15,10,40,0.7);border:1px solid rgba(123,47,247,0.25);backdrop-filter:blur(12px)}
+.agent-search-header{padding:20px 24px 16px;border-bottom:1px solid rgba(123,47,247,0.12)}
+.agent-search-title{font-weight:700;font-size:17px;color:#e2e8f0;margin-bottom:4px}
+.agent-search-sub{font-size:13px;color:rgba(226,232,240,0.5)}
+.agent-search-body{padding:20px 24px 24px}
+.agent-input-wrap{position:relative;margin-bottom:14px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,0.06);border:1px solid rgba(123,47,247,0.3)}
+.agent-input-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:16px;color:rgba(226,232,240,0.35);pointer-events:none}
+.agent-input{width:100%;background:transparent;border:none;outline:none;padding:14px 48px 14px 46px;color:#e2e8f0;font-size:15px;font-family:inherit}
+.agent-input::placeholder{color:rgba(226,232,240,0.35)}
+.agent-input-submit{position:absolute;right:10px;top:50%;transform:translateY(-50%);padding:6px 18px;border-radius:10px;background:linear-gradient(135deg,#7b2ff7,#0065ff);color:white;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.2s}
+.agent-input-submit:hover{opacity:0.88}
+.agent-analyzing{text-align:center;padding:16px;font-size:14px;color:rgba(0,210,255,0.8);display:none}
+.agent-result{border-radius:16px;padding:20px;background:rgba(0,210,255,0.05);border:1px solid rgba(0,210,255,0.15);animation:fadeInUp 0.4s ease;display:none}
+.agent-result-title{font-size:13px;color:rgba(226,232,240,0.5);margin-bottom:12px}
+.agent-result-tools{display:flex;flex-direction:column;gap:8px}
+.agent-result-tool{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);transition:all 0.2s;cursor:pointer}
+.agent-result-tool:hover{background:rgba(255,255,255,0.08);border-color:rgba(123,47,247,0.3)}
+.agent-result-tool-left{display:flex;align-items:center;gap:10px}
+.agent-result-tool-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.agent-result-tool-name{font-size:14px;font-weight:600;color:#e2e8f0}
+.agent-result-tool-cat{font-size:11px;color:rgba(226,232,240,0.4);margin-top:1px}
+.agent-result-tool-btn{padding:5px 12px;border-radius:8px;background:rgba(123,47,247,0.2);border:1px solid rgba(123,47,247,0.4);color:#c084fc;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.agent-result-tool-btn:hover{background:rgba(123,47,247,0.35)}
+
+/* ===== TOOLS ===== */
+#tools{position:relative}
+.tools-filter{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;justify-content:center}
+.filter-btn{padding:6px 16px;border-radius:100px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(226,232,240,0.6)}
+.filter-btn:hover,.filter-btn.active{background:rgba(123,47,247,0.2);border-color:rgba(123,47,247,0.5);color:#c084fc}
+.tools-search{margin-bottom:24px;position:relative}
+.tools-search-input{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:11px 16px 11px 42px;color:#e2e8f0;font-size:14px;font-family:inherit;outline:none;transition:border-color 0.2s}
+.tools-search-input:focus{border-color:rgba(123,47,247,0.5)}
+.tools-search-input::placeholder{color:rgba(226,232,240,0.35)}
+.tools-search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;color:rgba(226,232,240,0.35);pointer-events:none}
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.tool-card{border-radius:18px;overflow:hidden;background:rgba(15,10,40,0.65);border:1px solid rgba(255,255,255,0.07);transition:all 0.3s;cursor:pointer;position:relative;backdrop-filter:blur(8px)}
+.tool-card:hover{transform:translateY(-3px);border-color:rgba(123,47,247,0.35);box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+.tool-card-header{padding:16px 16px 0;display:flex;align-items:flex-start;gap:12px}
+.tool-card-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.tool-card-info{flex:1;min-width:0}
+.tool-card-name{font-size:14px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tool-card-cat{font-size:11px;color:rgba(226,232,240,0.4);margin-top:2px}
+.tool-card-badges{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.tool-badge-hot{padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700}
+.tool-card-desc{padding:10px 16px 14px;font-size:12px;color:rgba(226,232,240,0.55);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tool-card-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tool-card-meta{display:flex;align-items:center;gap:12px}
+.tool-card-calls{font-size:11px;color:rgba(226,232,240,0.4)}
+.tool-card-rating{font-size:11px;color:#ffd700}
+.btn-use-tool{padding:7px 16px;border-radius:9px;background:linear-gradient(135deg,#7b2ff7,#0065ff);color:white;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.btn-use-tool:hover{opacity:0.88}
+.btn-edit-tool{padding:6px 12px;border-radius:9px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(226,232,240,0.5);font-size:11px;cursor:pointer;transition:all 0.2s}
+.btn-edit-tool:hover{background:rgba(255,255,255,0.08);color:#e2e8f0}
+.tools-empty{text-align:center;padding:60px;color:rgba(226,232,240,0.4)}
+.tools-empty-icon{font-size:40px;margin-bottom:12px}
+
+/* ===== TOOL DETAIL MODAL ===== */
+.modal-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,0.8);backdrop-filter:blur(10px)}
+.modal-box{background:#12122a;border:1px solid rgba(255,255,255,0.1);border-radius:20px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;position:relative}
+.modal-grad-top{height:3px;background:linear-gradient(90deg,#00d2ff,#7b2ff7);border-radius:20px 20px 0 0}
+.modal-body{padding:24px}
+.modal-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-title{font-size:17px;font-weight:800;color:#e2e8f0}
+.modal-title-sub{font-size:12px;color:rgba(226,232,240,0.4);margin-top:2px}
+.modal-close{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.07);border:none;color:rgba(226,232,240,0.6);cursor:pointer;font-size:14px;transition:all 0.2s}
+.modal-close:hover{background:rgba(255,255,255,0.13)}
+
+/* ===== FORM ===== */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:11px;font-weight:600;color:rgba(226,232,240,0.45);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
+.form-input,.form-select,.form-textarea{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 14px;color:#e2e8f0;font-size:13px;font-family:inherit;outline:none;transition:border-color 0.2s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:#7b2ff7}
+.form-select{color:#000;background:#fff}
+.form-textarea{resize:none}
+.form-grid2{display:grid;grid-template-columns:1fr 3fr;gap:10px}
+.form-btns{display:flex;gap:10px;margin-top:20px}
+.btn-save{flex:1;padding:12px;border-radius:12px;background:linear-gradient(135deg,#7b2ff7,#0065ff);color:white;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.2s}
+.btn-save:hover{opacity:0.88}
+.btn-cancel{padding:12px 20px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:rgba(226,232,240,0.7);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-cancel:hover{background:rgba(255,255,255,0.09)}
+.btn-delete{padding:12px 20px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(226,232,240,0.5);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-delete.confirm{background:rgba(239,68,68,0.25);border-color:rgba(239,68,68,0.5);color:#ff6b6b}
+.btn-delete:hover{background:rgba(239,68,68,0.25);border-color:rgba(239,68,68,0.5);color:#ff6b6b}
+
+/* ===== ATTACHMENT UPLOAD ===== */
+.attach-upload-area{border:1.5px dashed rgba(123,47,247,0.35);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(123,47,247,0.04)}
+.attach-upload-area:hover{border-color:rgba(123,47,247,0.6);background:rgba(123,47,247,0.08)}
+.attach-upload-area.drag-over{border-color:#7b2ff7;background:rgba(123,47,247,0.12)}
+.attach-list{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.attach-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);font-size:12px}
+.attach-item-left{display:flex;align-items:center;gap:8px;min-width:0}
+.attach-item-name{color:rgba(226,232,240,0.8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.attach-item-size{color:rgba(226,232,240,0.35);font-size:11px;flex-shrink:0}
+.attach-item-del{background:none;border:none;color:rgba(226,232,240,0.35);cursor:pointer;font-size:13px;flex-shrink:0;padding:0 2px;transition:color 0.2s}
+.attach-item-del:hover{color:#ff6b6b}
+
+/* ===== USE TOOL CHOICE MODAL ===== */
+.choice-modal{background:#12122a;border:1px solid rgba(255,255,255,0.1);border-radius:18px;width:100%;max-width:400px;overflow:hidden}
+.choice-modal-header{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.07)}
+.choice-modal-title{font-size:16px;font-weight:700;color:#e2e8f0}
+.choice-modal-sub{font-size:12px;color:rgba(226,232,240,0.45);margin-top:3px}
+.choice-options{padding:16px;display:flex;flex-direction:column;gap:10px}
+.choice-btn{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);cursor:pointer;transition:all 0.2s;text-align:left;width:100%}
+.choice-btn:hover{background:rgba(255,255,255,0.09);border-color:rgba(123,47,247,0.4)}
+.choice-btn-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.choice-btn-text{flex:1}
+.choice-btn-title{font-size:14px;font-weight:600;color:#e2e8f0}
+.choice-btn-sub{font-size:11px;color:rgba(226,232,240,0.45);margin-top:2px}
+.choice-cancel{display:block;width:100%;padding:12px;text-align:center;background:none;border:none;color:rgba(226,232,240,0.4);font-size:13px;cursor:pointer;transition:color 0.2s;font-family:inherit}
+.choice-cancel:hover{color:rgba(226,232,240,0.7)}
+
+/* ===== TOOL DETAIL VIEW ===== */
+.detail-header{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.detail-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.detail-name{font-size:20px;font-weight:800;color:#e2e8f0}
+.detail-meta{display:flex;align-items:center;gap:12px;margin-top:4px;flex-wrap:wrap}
+.detail-meta span{font-size:12px;color:rgba(226,232,240,0.45)}
+.detail-meta strong{color:rgba(226,232,240,0.7)}
+.detail-desc{font-size:14px;color:rgba(226,232,240,0.65);line-height:1.7;margin-bottom:20px}
+.detail-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
+.detail-tag{padding:4px 10px;border-radius:100px;font-size:11px;background:rgba(123,47,247,0.15);border:1px solid rgba(123,47,247,0.3);color:#c084fc}
+.detail-section{margin-bottom:20px}
+.detail-section-title{font-size:12px;font-weight:600;color:rgba(226,232,240,0.45);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px}
+.install-guide{background:rgba(0,0,0,0.3);border-radius:12px;padding:14px;font-size:12px;color:rgba(226,232,240,0.7);line-height:1.8;white-space:pre-wrap;font-family:inherit}
+.detail-attach-list{display:flex;flex-direction:column;gap:8px}
+.detail-attach-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07)}
+.detail-attach-item-left{display:flex;align-items:center;gap:10px}
+.detail-attach-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(123,47,247,0.15);border:1px solid rgba(123,47,247,0.25)}
+.detail-attach-name{font-size:13px;color:rgba(226,232,240,0.8);font-weight:500}
+.detail-attach-size{font-size:11px;color:rgba(226,232,240,0.4);margin-top:1px}
+.btn-download{padding:6px 14px;border-radius:8px;background:rgba(0,210,255,0.12);border:1px solid rgba(0,210,255,0.3);color:#00d2ff;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-download:hover{background:rgba(0,210,255,0.2)}
+.btn-open{padding:6px 14px;border-radius:8px;background:rgba(107,255,142,0.12);border:1px solid rgba(107,255,142,0.3);color:#6bff8e;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-open:hover{background:rgba(107,255,142,0.2)}
+.detail-action-row{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+
+/* ===== COMMENTS ===== */
+.comment-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.comment-item{padding:12px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)}
+.comment-author{font-size:12px;font-weight:600;color:#c084fc;margin-bottom:4px}
+.comment-text{font-size:13px;color:rgba(226,232,240,0.65);line-height:1.6}
+.comment-empty{font-size:13px;color:rgba(226,232,240,0.3);text-align:center;padding:20px}
+.comment-form{display:flex;flex-direction:column;gap:8px}
+.comment-input-name{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:9px 12px;color:#e2e8f0;font-size:13px;font-family:inherit;outline:none;transition:border-color 0.2s}
+.comment-input-name:focus{border-color:rgba(123,47,247,0.5)}
+.comment-input-name::placeholder{color:rgba(226,232,240,0.3)}
+.comment-textarea{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:9px 12px;color:#e2e8f0;font-size:13px;font-family:inherit;outline:none;resize:none;transition:border-color 0.2s}
+.comment-textarea:focus{border-color:rgba(123,47,247,0.5)}
+.comment-textarea::placeholder{color:rgba(226,232,240,0.3)}
+.btn-comment{padding:8px 20px;border-radius:10px;background:linear-gradient(135deg,#7b2ff7,#0065ff);color:white;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.2s;align-self:flex-end}
+.btn-comment:hover{opacity:0.88}
+
+/* ===== SUBMIT TOOL MODAL ===== */
+
+/* ===== DASHBOARD ===== */
+#dashboard{background:rgba(5,5,20,0.6)}
+.dashboard-inner{max-width:1100px;margin:0 auto}
+.dashboard-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:800px){.dashboard-cols{grid-template-columns:1fr}}
+
+/* ===== DEMAND WALL ===== */
+.demand-wall{border-radius:20px;overflow:hidden;background:rgba(15,10,40,0.6);backdrop-filter:blur(12px);border:1px solid rgba(123,47,247,0.2)}
+.demand-header{padding:18px 24px;border-bottom:1px solid rgba(123,47,247,0.15);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.demand-header-left{display:flex;align-items:center;gap:12px}
+.demand-header-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(123,47,247,0.2);border:1px solid rgba(123,47,247,0.4)}
+.demand-header-title{font-weight:700;font-size:15px;color:#e2e8f0}
+.demand-header-sub{font-size:11px;color:rgba(226,232,240,0.4);margin-top:2px}
+.demand-count-badge{padding:4px 12px;border-radius:100px;background:rgba(123,47,247,0.15);border:1px solid rgba(123,47,247,0.3);font-size:11px;color:#c084fc;font-weight:600}
+.demand-submit-btn{padding:6px 14px;border-radius:10px;background:linear-gradient(135deg,#7b2ff7,#0065ff);color:white;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:opacity 0.2s;display:flex;align-items:center;gap:5px}
+.demand-submit-btn:hover{opacity:0.88}
+.demand-list{divide-y:rgba(123,47,247,0.08)}
+.demand-item{padding:16px 24px;display:flex;align-items:flex-start;gap:14px;transition:background 0.2s;border-bottom:1px solid rgba(123,47,247,0.08)}
+.demand-item:last-child{border-bottom:none}
+.demand-item:hover{background:rgba(123,47,247,0.04)}
+.demand-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;background:linear-gradient(135deg,#7b2ff7,#00d2ff);flex-shrink:0}
+.demand-info{flex:1;min-width:0}
+.demand-user-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.demand-user{font-size:13px;font-weight:600;color:#e2e8f0}
+.demand-status{padding:2px 8px;border-radius:100px;font-size:11px;font-weight:500}
+.demand-time{font-size:11px;color:rgba(226,232,240,0.35);margin-left:auto}
+.demand-text{font-size:13px;color:rgba(226,232,240,0.6);line-height:1.5}
+.demand-vote-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 8px;border-radius:12px;transition:all 0.2s;flex-shrink:0;cursor:pointer;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:rgba(226,232,240,0.5)}
+.demand-vote-btn:hover{background:rgba(123,47,247,0.15);border-color:rgba(123,47,247,0.4);color:#c084fc}
+.demand-vote-btn.voted{background:rgba(123,47,247,0.2);border-color:rgba(123,47,247,0.5);color:#c084fc;cursor:default}
+.demand-vote-arrow{font-size:12px}
+.demand-vote-count{font-size:12px;font-weight:700}
+
+/* ===== SUBMIT DEMAND MODAL ===== */
+.submit-demand-modal{background:#12122a;border:1px solid rgba(123,47,247,0.2);border-radius:18px;width:100%;max-width:480px;overflow:hidden}
+.submit-demand-header{background:linear-gradient(135deg,rgba(123,47,247,0.15),rgba(0,101,255,0.1));padding:20px 24px;border-bottom:1px solid rgba(123,47,247,0.15)}
+.submit-demand-title{font-size:16px;font-weight:700;color:#e2e8f0}
+.submit-demand-sub{font-size:12px;color:rgba(226,232,240,0.45);margin-top:3px}
+.submit-demand-body{padding:20px 24px 24px}
+.demand-char-count{font-size:11px;color:rgba(226,232,240,0.35);text-align:right;margin-top:4px}
+
+/* ===== ACTIVITY FEED ===== */
+.activity-feed{border-radius:20px;overflow:hidden;background:rgba(15,10,40,0.6);backdrop-filter:blur(12px);border:1px solid rgba(0,210,255,0.2)}
+.activity-header{padding:18px 24px;border-bottom:1px solid rgba(0,210,255,0.1);display:flex;align-items:center;justify-content:space-between}
+.activity-header-left{display:flex;align-items:center;gap:12px}
+.activity-header-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(0,210,255,0.15);border:1px solid rgba(0,210,255,0.4)}
+.activity-title{font-weight:700;font-size:15px;color:#e2e8f0}
+.activity-sub{font-size:11px;color:rgba(226,232,240,0.4);margin-top:2px}
+.activity-live{display:flex;align-items:center;gap:6px}
+.activity-live-dot{width:8px;height:8px;border-radius:50%;background:#34d399}
+.activity-live-text{font-size:12px;color:rgba(52,211,153,0.8)}
+.activity-list{max-height:360px;overflow:hidden}
+.activity-item{padding:12px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(0,210,255,0.06);transition:all 0.3s}
+.activity-item:last-child{border-bottom:none}
+.activity-icon-wrap{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.activity-text{flex:1;font-size:12px}
+.activity-time{font-size:11px;color:rgba(226,232,240,0.3);flex-shrink:0;white-space:nowrap}
+
+/* ===== FOOTER ===== */
+footer{padding:40px 24px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)}
+.footer-text{font-size:13px;color:rgba(226,232,240,0.25)}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .nav-links{display:none}
+  .nav-mobile-btn{display:block}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .tools-grid{grid-template-columns:1fr}
+  .hero-stats{gap:24px}
+  .section{padding:64px 16px}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr}
+  .hero-stats{flex-direction:column;gap:16px}
+  .form-grid2{grid-template-columns:1fr}
+}
+
+/* ===== HOTNESS STYLES ===== */
+.hot-blazing{background:rgba(255,100,50,0.2);border:1px solid rgba(255,100,50,0.4);color:#ff6432}
+.hot-hot{background:rgba(0,210,255,0.15);border:1px solid rgba(0,210,255,0.35);color:#00d2ff}
+.hot-trending{background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.35);color:#34d399}
+.hot-new{background:rgba(123,47,247,0.15);border:1px solid rgba(123,47,247,0.35);color:#a78bfa}
+
+/* ===== RATING STARS ===== */
+.stars{color:#ffd700;font-size:11px}
+
+/* custom scrollbar for modal */
+.modal-box::-webkit-scrollbar{width:4px}
+.modal-box::-webkit-scrollbar-thumb{background:rgba(123,47,247,0.4);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">🤖</div>
+    <span class="nav-logo-text">团队智能百宝箱工作台</span>
+  </div>
+  <div class="nav-links">
+    <a href="#hero">首页</a>
+    <a href="#agent">智能路由</a>
+    <a href="#tools">百宝箱</a>
+    <a href="#dashboard">数据看板</a>
+    <button class="btn-submit-tool" onclick="openSubmitTool()">+ 提交工具</button>
+  </div>
+  <button class="nav-mobile-btn" onclick="toggleMobileMenu()">☰</button>
+</nav>
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#hero" onclick="toggleMobileMenu()">首页</a>
+  <a href="#agent" onclick="toggleMobileMenu()">智能路由</a>
+  <a href="#tools" onclick="toggleMobileMenu()">百宝箱</a>
+  <a href="#dashboard" onclick="toggleMobileMenu()">数据看板</a>
+  <button class="btn-submit-tool" style="width:100%;margin-top:8px" onclick="toggleMobileMenu();openSubmitTool()">+ 提交工具</button>
+</div>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-orb1"></div>
+  <div class="hero-orb2"></div>
+  <div class="hero-content fade-in">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      AI Powered · 团队效率工具平台
+    </div>
+    <h1 class="hero-title">团队智能<br>百宝箱工作台</h1>
+    <p class="hero-sub">集中管理团队内部工具，AI智能推荐，一站式提升工作效率<br>让每个工具发挥最大价值，让每个人成为生产力达人</p>
+    <div class="hero-btns">
+      <a href="#agent" class="btn-primary">🤖 智能找工具</a>
+      <a href="#tools" class="btn-secondary">🧰 浏览百宝箱</a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-num" id="stat-tools">0</div>
+        <div class="hero-stat-label">工具总数</div>
+      </div>
+      <div>
+        <div class="hero-stat-num" id="stat-calls">0</div>
+        <div class="hero-stat-label">今日调用</div>
+      </div>
+      <div>
+        <div class="hero-stat-num" id="stat-users">0</div>
+        <div class="hero-stat-label">活跃用户</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AGENT SECTION -->
+<section id="agent" class="section">
+  <div class="section-header">
+    <div class="section-tag">✦ SMART ROUTING</div>
+    <h2 class="section-title">智能路由引擎</h2>
+    <p class="section-sub">描述你的需求，Agent 会为你推荐最合适的工具</p>
+  </div>
+  <div class="agent-inner">
+    <div class="agent-search-box">
+      <div class="agent-search-header">
+        <div class="agent-search-title">🤖 AI 工具推荐助手</div>
+        <div class="agent-search-sub">输入你想解决的问题或需要完成的任务，AI 帮你找到最匹配的工具</div>
+      </div>
+      <div class="agent-search-body">
+        <div class="agent-input-wrap">
+          <span class="agent-input-icon">🔍</span>
+          <input id="agent-input" class="agent-input" placeholder="例如：我想整理桌面文件夹、分析Excel数据、生成报告..." onkeydown="if(event.key==='Enter')runAgent()" />
+          <button class="agent-input-submit" onclick="runAgent()">分析</button>
+        </div>
+        <div id="agent-analyzing" class="agent-analyzing">
+          <span style="display:inline-block;animation:spin 1s linear infinite;margin-right:6px">◌</span>Agent 正在分析你的需求...
+        </div>
+        <div id="agent-result" class="agent-result">
+          <div id="agent-result-title" class="agent-result-title"></div>
+          <div id="agent-result-tools" class="agent-result-tools"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOLS SECTION -->
+<section id="tools" class="section">
+  <div class="section-header">
+    <div class="section-tag">🧰 TOOLBOX</div>
+    <h2 class="section-title">团队百宝箱</h2>
+    <p class="section-sub">所有内部工具，一站管理，随时取用</p>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="tools-filter" id="tools-filter">
+    <button class="filter-btn active" data-cat="all" onclick="filterTools('all',this)">全部</button>
+    <button class="filter-btn" data-cat="效率" onclick="filterTools('效率',this)">效率工具</button>
+    <button class="filter-btn" data-cat="数据" onclick="filterTools('数据',this)">数据处理</button>
+    <button class="filter-btn" data-cat="育儿" onclick="filterTools('育儿',this)">育儿助手</button>
+    <button class="filter-btn" data-cat="信息" onclick="filterTools('信息',this)">信息获取</button>
+    <button class="filter-btn" data-cat="展示" onclick="filterTools('展示',this)">产品展示</button>
+    <button class="filter-btn" data-cat="物流" onclick="filterTools('物流',this)">物流关务</button>
+    <button class="filter-btn" data-cat="文本生成" onclick="filterTools('文本生成',this)">文本生成</button>
+    <button class="filter-btn" data-cat="图像处理" onclick="filterTools('图像处理',this)">图像处理</button>
+    <button class="filter-btn" data-cat="代码辅助" onclick="filterTools('代码辅助',this)">代码辅助</button>
+    <button class="filter-btn" data-cat="对话助手" onclick="filterTools('对话助手',this)">对话助手</button>
+    <button class="filter-btn" data-cat="自动化" onclick="filterTools('自动化',this)">自动化</button>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="tools-search" style="max-width:500px;margin:0 auto 24px">
+    <span class="tools-search-icon">🔍</span>
+    <input id="tools-search-input" class="tools-search-input" placeholder="搜索工具名称、关键词..." oninput="searchTools(this.value)" />
+  </div>
+
+  <div id="tools-grid" class="tools-grid"></div>
+</section>
+
+<!-- DASHBOARD SECTION -->
+<section id="dashboard" class="section">
+  <div class="section-header">
+    <div class="section-tag">📊 DASHBOARD</div>
+    <h2 class="section-title">数据看板</h2>
+    <p class="section-sub">团队工具使用情况一览</p>
+  </div>
+  <div class="dashboard-inner">
+    <!-- Stats -->
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <!-- Two columns: Demand Wall + Activity Feed -->
+    <div class="dashboard-cols">
+      <!-- DEMAND WALL -->
+      <div class="demand-wall">
+        <div class="demand-header">
+          <div class="demand-header-left">
+            <div class="demand-header-icon">📋</div>
+            <div>
+              <div class="demand-header-title">需求墙</div>
+              <div class="demand-header-sub">社区功能投票与追踪</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span class="demand-count-badge" id="demand-count-badge">5 条需求</span>
+            <button class="demand-submit-btn" onclick="openSubmitDemand()">✏ 提交需求</button>
+          </div>
+        </div>
+        <div class="demand-list" id="demand-list"></div>
+      </div>
+
+      <!-- ACTIVITY FEED -->
+      <div class="activity-feed">
+        <div class="activity-header">
+          <div class="activity-header-left">
+            <div class="activity-header-icon">⚡</div>
+            <div>
+              <div class="activity-title">活跃动态</div>
+              <div class="activity-sub">实时用户行为流</div>
+            </div>
+          </div>
+          <div class="activity-live">
+            <div class="activity-live-dot cyber-pulse"></div>
+            <span class="activity-live-text">实时</span>
+          </div>
+        </div>
+        <div class="activity-list" id="activity-list"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p class="footer-text">© 2026 团队智能百宝箱工作台 · Powered by AI · 杨小丹 & Hanson 出品</p>
+</footer>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Tool Detail Modal -->
+<div id="modal-detail" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-detail')">
+  <div class="modal-box">
+    <div class="modal-grad-top"></div>
+    <div class="modal-body" id="modal-detail-body"></div>
+  </div>
+</div>
+
+<!-- Edit Tool Modal -->
+<div id="modal-edit" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-edit')">
+  <div class="modal-box">
+    <div class="modal-grad-top"></div>
+    <div class="modal-body">
+      <div class="modal-title-row">
+        <div>
+          <div class="modal-title">⚙ 编辑工具</div>
+          <div class="modal-title-sub">修改工具信息或删除此工具</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-edit')">✕</button>
+      </div>
+      <form id="edit-form" onsubmit="return false">
+        <div class="form-grid2">
+          <div class="form-group">
+            <label class="form-label">图标</label>
+            <input type="text" id="edit-icon" class="form-input" maxlength="2" style="text-align:center;font-size:20px" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">工具名称 *</label>
+            <input type="text" id="edit-name" class="form-input" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">分类</label>
+          <select id="edit-category" class="form-select">
+            <option value="效率">效率工具</option>
+            <option value="数据">数据处理</option>
+            <option value="育儿">育儿助手</option>
+            <option value="信息">信息获取</option>
+            <option value="展示">产品展示</option>
+            <option value="物流">物流关务</option>
+            <option value="文本生成">文本生成</option>
+            <option value="图像处理">图像处理</option>
+            <option value="代码辅助">代码辅助</option>
+            <option value="对话助手">对话助手</option>
+            <option value="自动化">自动化</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">简短描述</label>
+          <textarea id="edit-desc" class="form-textarea" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">详细介绍</label>
+          <textarea id="edit-longdesc" class="form-textarea" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">作者</label>
+          <input type="text" id="edit-author" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">工具网址（打开链接）</label>
+          <input type="url" id="edit-url" class="form-input" placeholder="https://..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">使用说明 / 安装教程</label>
+          <textarea id="edit-guide" class="form-textarea" rows="4"></textarea>
+        </div>
+
+        <!-- ✨ NEW: Attachment Upload -->
+        <div class="form-group">
+          <label class="form-label">📎 附件上传（支持 zip、文档、表格等）</label>
+          <div class="attach-upload-area" id="attach-drop-zone" onclick="document.getElementById('attach-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleAttachDrop(event)">
+            <div style="font-size:24px;margin-bottom:6px">📁</div>
+            <div style="font-size:13px;color:rgba(226,232,240,0.6);font-weight:500">点击上传或拖拽文件到此处</div>
+            <div style="font-size:11px;color:rgba(226,232,240,0.35);margin-top:4px">支持 .zip .pdf .doc .docx .xls .xlsx .ppt .pptx .txt 等格式</div>
+          </div>
+          <input type="file" id="attach-file-input" style="display:none" multiple accept=".zip,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rar,.7z,.csv" onchange="handleAttachFiles(this.files)" />
+          <div class="attach-list" id="edit-attach-list"></div>
+        </div>
+
+        <div class="form-btns">
+          <button type="button" class="btn-save" onclick="saveEditTool()">✓ 保存更改</button>
+          <button type="button" class="btn-cancel" onclick="closeModal('modal-edit')">取消</button>
+          <button type="button" id="btn-delete" class="btn-delete" onclick="confirmDeleteTool()">🗑 删除</button>
+        </div>
+        <p id="delete-warn" style="display:none;text-align:center;font-size:12px;color:#ff6b6b;margin-top:8px">再次点击「确认删除」将永久删除此工具，操作不可撤销</p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Submit Tool Modal -->
+<div id="modal-submit-tool" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-submit-tool')">
+  <div class="modal-box">
+    <div class="modal-grad-top"></div>
+    <div class="modal-body">
+      <div class="modal-title-row">
+        <div>
+          <div class="modal-title">+ 提交新工具</div>
+          <div class="modal-title-sub">向百宝箱添加团队工具</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-submit-tool')">✕</button>
+      </div>
+      <form id="submit-tool-form" onsubmit="return false">
+        <div class="form-grid2">
+          <div class="form-group">
+            <label class="form-label">图标</label>
+            <input type="text" id="st-icon" class="form-input" value="🔧" maxlength="2" style="text-align:center;font-size:20px" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">工具名称 *</label>
+            <input type="text" id="st-name" class="form-input" placeholder="给工具起个名字" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">分类</label>
+          <select id="st-category" class="form-select">
+            <option value="效率">效率工具</option>
+            <option value="数据">数据处理</option>
+            <option value="育儿">育儿助手</option>
+            <option value="信息">信息获取</option>
+            <option value="展示">产品展示</option>
+            <option value="物流">物流关务</option>
+            <option value="文本生成">文本生成</option>
+            <option value="图像处理">图像处理</option>
+            <option value="代码辅助">代码辅助</option>
+            <option value="对话助手">对话助手</option>
+            <option value="自动化">自动化</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">简短描述</label>
+          <textarea id="st-desc" class="form-textarea" rows="2" placeholder="一句话说明这个工具是干什么的"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">工具网址（可选）</label>
+          <input type="url" id="st-url" class="form-input" placeholder="https://..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">作者</label>
+          <input type="text" id="st-author" class="form-input" placeholder="你的名字" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">📎 附件上传（可选）</label>
+          <div class="attach-upload-area" onclick="document.getElementById('st-file-input').click()">
+            <div style="font-size:20px;margin-bottom:4px">📁</div>
+            <div style="font-size:13px;color:rgba(226,232,240,0.55)">点击上传工具文件</div>
+            <div style="font-size:11px;color:rgba(226,232,240,0.35);margin-top:3px">支持 zip、文档等格式</div>
+          </div>
+          <input type="file" id="st-file-input" style="display:none" multiple accept=".zip,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rar,.7z,.csv" onchange="handleStFiles(this.files)" />
+          <div class="attach-list" id="st-attach-list"></div>
+        </div>
+        <div class="form-btns">
+          <button type="button" class="btn-save" onclick="saveNewTool()">+ 提交工具</button>
+          <button type="button" class="btn-cancel" onclick="closeModal('modal-submit-tool')">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Submit Demand Modal (✨ NEW) -->
+<div id="modal-submit-demand" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-submit-demand')">
+  <div class="submit-demand-modal">
+    <div class="submit-demand-header">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="submit-demand-title">📋 提交工具需求</div>
+          <div class="submit-demand-sub">告诉团队你需要什么工具，大家一起投票支持</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-submit-demand')">✕</button>
+      </div>
+    </div>
+    <div class="submit-demand-body">
+      <div class="form-group">
+        <label class="form-label">你的名字（选填）</label>
+        <input type="text" id="demand-user-name" class="form-input" placeholder="匿名提交也可以" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">需求描述 *</label>
+        <textarea id="demand-text" class="form-textarea" rows="4" placeholder="描述你想要什么功能或工具，越具体越好...&#10;例如：需要一个能自动合并多个Excel文件的工具，支持去重和格式统一" maxlength="300" oninput="updateDemandCount(this)"></textarea>
+        <div class="demand-char-count"><span id="demand-char-count">0</span> / 300 字</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">状态</label>
+        <select id="demand-status" class="form-select">
+          <option value="规划中">规划中</option>
+          <option value="评估中">评估中</option>
+          <option value="进行中">进行中</option>
+        </select>
+      </div>
+      <div class="form-btns">
+        <button type="button" class="btn-save" onclick="submitDemand()">📋 提交需求</button>
+        <button type="button" class="btn-cancel" onclick="closeModal('modal-submit-demand')">取消</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Use Tool Choice Modal (✨ NEW) -->
+<div id="modal-use-choice" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-use-choice')">
+  <div class="choice-modal">
+    <div class="choice-modal-header">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="choice-modal-title" id="choice-tool-name">使用工具</div>
+          <div class="choice-modal-sub">该工具同时提供网址和附件，请选择使用方式</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-use-choice')">✕</button>
+      </div>
+    </div>
+    <div class="choice-options">
+      <button class="choice-btn" id="choice-btn-url" onclick="choiceOpenUrl()">
+        <div class="choice-btn-icon" style="background:rgba(107,255,142,0.15);border:1px solid rgba(107,255,142,0.3)">🌐</div>
+        <div class="choice-btn-text">
+          <div class="choice-btn-title">打开网页工具</div>
+          <div class="choice-btn-sub">在浏览器中直接使用，无需下载</div>
+        </div>
+        <span style="color:rgba(226,232,240,0.3);font-size:18px">›</span>
+      </button>
+      <button class="choice-btn" id="choice-btn-file" onclick="choiceDownload()">
+        <div class="choice-btn-icon" style="background:rgba(0,210,255,0.12);border:1px solid rgba(0,210,255,0.3)">📦</div>
+        <div class="choice-btn-text">
+          <div class="choice-btn-title">下载附件</div>
+          <div class="choice-btn-sub" id="choice-btn-file-sub">下载工具文件到本地</div>
+        </div>
+        <span style="color:rgba(226,232,240,0.3);font-size:18px">›</span>
+      </button>
+    </div>
+    <button class="choice-cancel" onclick="closeModal('modal-use-choice')">取消</button>
+  </div>
+</div>
+
+<script>
+// ===================================================================
+// DATA
+// ===================================================================
+const STORAGE_KEY = 'logiagent_studio_data';
+const DATA_VERSION = 5;
+
+const DEMO_TOOLS = [
+  {id:1,name:"NeuralWrite Pro",description:"基于GPT-4的高级文本生成引擎，支持多风格、多语言内容创作",longDescription:"NeuralWrite Pro 是业界领先的 AI 文本生成工具，支持小说、营销文案、技术文档等多种写作风格。内置超过 50 种专业模板，支持实时协作与版本管理。",category:"文本生成",icon:"✍️",color:"#7b2ff7",hotness:"blazing",calls:48293,rating:4.9,tags:["GPT-4","多语言","创意写作"],keywords:["gpt","写作","文本","文案","内容","创作"],author:"NeuroLabs",version:"3.2.1",installGuide:"通过 API Key 接入，支持 REST API 和 SDK。\n1. 注册账号获取 API Key\n2. npm install neuralwrite-sdk\n3. 参考文档集成到你的应用",demoUrl:"https://neuralwrite.demo",downloadUrl:"",files:[]},
+  {id:2,name:"PixelForge AI",description:"Stable Diffusion驱动的图像生成工具，支持LoRA微调和风格迁移",longDescription:"PixelForge AI 整合了最新的 Stable Diffusion XL 模型，支持文生图、图生图、局部重绘等功能。提供 200+ 预训练 LoRA 风格包，一键切换艺术风格。",category:"图像处理",icon:"🎨",color:"#00d2ff",hotness:"hot",calls:35671,rating:4.8,tags:["Stable Diffusion","LoRA","风格迁移"],keywords:["图像","图片","生成","绘画","sd","stable"],author:"PixelAI",version:"2.8.0",installGuide:"1. 安装 CUDA 11.8+（NVIDIA GPU）\n2. pip install pixelforge\n3. 下载基础模型权重\n4. python run.py --port 7860",demoUrl:"",downloadUrl:"",files:[]},
+  {id:3,name:"CodeMind X",description:"智能代码补全与重构助手，支持50+编程语言，实时错误检测",longDescription:"CodeMind X 基于 Code Llama 和 GPT-4 双引擎驱动，提供实时代码补全、智能重构建议、Bug 定位与修复。支持 VS Code、JetBrains 全系列 IDE 集成。",category:"代码辅助",icon:"💻",color:"#34d399",hotness:"blazing",calls:62847,rating:4.9,tags:["代码补全","重构","调试"],keywords:["代码","编程","补全","debug","调试"],author:"DevAI Corp",version:"4.1.2",installGuide:"1. 在 VS Code 扩展商店搜索 \"CodeMind X\"\n2. 点击安装并重启 VS Code\n3. 使用 API Key 激活\n4. 在设置中配置补全灵敏度",demoUrl:"",downloadUrl:"",files:[]},
+  {id:4,name:"DataSage Analytics",description:"自然语言驱动的数据分析平台，直接对话即可生成图表与洞察",longDescription:"DataSage 让每个人都能成为数据分析师。只需用自然语言描述你想了解的数据问题，系统自动生成 SQL 查询、执行分析并输出可交互的可视化图表。",category:"数据",icon:"📊",color:"#00d2ff",hotness:"trending",calls:28934,rating:4.7,tags:["NL2SQL","可视化","BI"],keywords:["数据","分析","sql","查询","bi"],author:"DataMind Labs",version:"1.9.4",installGuide:"1. 访问 datasage.ai 注册账号\n2. 连接你的数据库（支持MySQL/PG/MongoDB）\n3. 在对话框输入数据问题即可",demoUrl:"",downloadUrl:"",files:[]},
+  {id:5,name:"ChatFlux Pro",description:"企业级多轮对话引擎，支持知识库接入与私有化部署",longDescription:"ChatFlux Pro 提供企业级对话解决方案，支持接入私有知识库、文档库和数据库。内置 RAG 检索增强生成技术，确保回答的准确性和时效性。",category:"对话助手",icon:"🤖",color:"#ff6b6b",hotness:"hot",calls:41205,rating:4.8,tags:["RAG","知识库","私有化"],keywords:["对话","聊天","知识库","rag","企业"],author:"FluxAI",version:"5.0.3",installGuide:"1. docker pull chatflux/pro:latest\n2. docker run -p 3000:3000 -e API_KEY=your_key chatflux/pro\n3. 访问 localhost:3000 上传知识库文档",demoUrl:"",downloadUrl:"",files:[]},
+  {id:6,name:"AutoFlow Engine",description:"无代码AI工作流编排平台，拖拽式构建复杂自动化流程",longDescription:"AutoFlow Engine 让非技术人员也能构建复杂的 AI 自动化流程。内置 200+ 预置模块，支持条件分支、循环迭代、并行处理，一键部署到云端运行。",category:"自动化",icon:"⚡",color:"#ffd700",hotness:"trending",calls:19563,rating:4.7,tags:["无代码","工作流","RPA"],keywords:["自动化","工作流","rpa","无代码","流程"],author:"FlowTech",version:"2.4.1",installGuide:"1. 访问 autoflow.io 创建账号\n2. 选择「新建工作流」\n3. 从组件库拖入需要的模块\n4. 配置触发条件后点击「部署」",demoUrl:"",downloadUrl:"",files:[]}
+];
+
+const TEAM_TOOLS = [
+  {id:101,name:"育儿小程序",category:"育儿",description:"AI预测宝宝清醒窗口(Wake Window)及睡眠黄金点(Sweet Spot)，1秒计算，彻底告别过度疲劳导致的哄睡难题。",longDescription:"AI预测宝宝清醒窗口(Wake Window)及睡眠黄金点(Sweet Spot)，1秒计算，彻底告别过度疲劳导致的哄睡难题。动态WW修正算法+多维度数据联动+异常检测预警+自动化辅食推荐。",icon:"🍼",color:"#ff6b9d",hotness:"hot",calls:128,rating:4.8,tags:["宝宝","睡眠","AI预测"],keywords:["育儿","宝宝","睡眠","哄睡","wake window","清醒"],author:"杨小丹",version:"1.0.0",installGuide:"1. 打开微信小程序搜索「宝宝睡眠助手」\n2. 授权登录后录入宝宝月龄\n3. 每次醒来后点击「开始记录」\n4. 系统自动计算下次最佳入睡时间",demoUrl:"",downloadUrl:"",files:[]},
+  {id:102,name:"每日定点情报官",category:"信息",description:"定时抓取科技新闻+社会热点，智能提取核心资讯，支持邮箱/通讯软件多端推送。把被动搜索变为主动投喂。",longDescription:"定时抓取科技新闻+社会热点，智能提取核心资讯，支持邮箱/通讯软件多端推送。把被动搜索变为主动投喂，确保商务沟通不落伍。",icon:"📰",color:"#ffd93d",hotness:"hot",calls:256,rating:4.7,tags:["新闻","自动推送","情报"],keywords:["新闻","情报","热点","资讯","推送","早报"],author:"杨小丹",version:"2.0.0",installGuide:"1. 下载 daily_news_bot.zip 并解压\n2. 安装依赖: pip install -r requirements.txt\n3. 配置 config.yaml 中的邮箱和关键词\n4. 运行: python main.py\n5. 设置系统定时任务每日自动执行",demoUrl:"",downloadUrl:"",files:[]},
+  {id:103,name:"SmartBrief",category:"展示",description:"智能简报生成器，通过七步流程把半天报告工作压缩到15分钟：选模板→填信息→配指标→做图表→AI分析→一键导出，支持多种格式输出。",longDescription:"SmartBrief 智能简报是一个通用报告生成器，解决写报告耗时、格式不统一、数据分散难整合的通病。通过选模板、填信息、配指标、做图表、AI分析到一键导出的七步流程，把原本半天的报告工作压缩到15分钟，支持多种格式输出，让专业报告不再是设计师的特权。",icon:"📋",color:"#6bff8e",hotness:"trending",calls:89,rating:4.6,tags:["报告生成","智能简报","效率"],keywords:["官网","落地页","品牌","宣传","简报","报告","smartbrief"],author:"杨小丹",version:"2.0.0",installGuide:"点击「使用工具」直接在浏览器中打开 SmartBrief，无需安装任何软件。",demoUrl:"https://jennyyaaa77.github.io/smartbrief/",downloadUrl:"",files:[]},
+  {id:104,name:"Excel驱动型动态看板",category:"数据",description:"上传Excel秒变专业仪表盘，内置模板下载+拖拽上传+Milestone状态实时同步+自动计算完成进度。",longDescription:"上传Excel秒变专业仪表盘，内置模板下载+拖拽上传+Milestone状态实时同步+自动计算完成进度。让普通表格具备实时交互性能。",icon:"📊",color:"#7b2ff7",hotness:"blazing",calls:312,rating:4.9,tags:["Excel","看板","数据可视化"],keywords:["excel","看板","仪表盘","dashboard","报表","进度"],author:"杨小丹",version:"3.0.0",installGuide:"1. 打开 dashboard.html 文件\n2. 下载内置Excel模板并按格式填写数据\n3. 拖拽上传Excel文件到页面\n4. 看板自动渲染，支持实时刷新\n5. 可导出为PDF或图片",demoUrl:"",downloadUrl:"",files:[]},
+  {id:105,name:"桌面自动整理神器",category:"效率",description:"一键按文件类型自动归类（图片/文档/表格/压缩包/其他），自动创建分类文件夹，智能移动文件并保留快捷方式。",longDescription:"一键按文件类型自动归类（图片/文档/表格/压缩包/其他），自动创建分类文件夹，智能移动文件并保留快捷方式。治愈强迫症首选。",icon:"🗂",color:"#00d2ff",hotness:"blazing",calls:445,rating:4.9,tags:["文件整理","自动化","效率"],keywords:["桌面","整理","文件归类","文件夹","分类","治愈","强迫症"],author:"杨小丹",version:"2.1.0",installGuide:"1. 下载 desktop_organizer.exe (Windows) 或 .sh (Mac/Linux)\n2. Windows: 双击运行，选择目标文件夹\n3. Mac/Linux: chmod +x organize.sh && ./organize.sh\n4. 首次运行会创建分类文件夹\n5. 可设置为开机自启动",demoUrl:"",downloadUrl:"",files:[]},
+  {id:106,name:"数据对比小秘书",category:"数据",description:"以订单号为Key自动匹配，1秒识别新增/删除/状态变化订单，自动生成差异对比报告.xlsx，支持大批量数据。",longDescription:"以订单号为Key自动匹配，1秒识别新增/删除/状态变化订单，自动生成差异对比报告.xlsx，支持大批量数据一键处理。",icon:"🔍",color:"#7b2ff7",hotness:"hot",calls:198,rating:4.7,tags:["数据对比","订单","Excel"],keywords:["对比","差异","订单","匹配","比较","diff"],author:"杨小丹",version:"1.5.0",installGuide:"1. 安装Python 3.8+环境\n2. pip install pandas openpyxl\n3. 运行: python compare.py --old data_old.xlsx --new data_new.xlsx\n4. 自动生成 diff_report.xlsx 对比报告\n5. 支持命令行参数自定义主键列",demoUrl:"",downloadUrl:"",files:[]},
+  {id:107,name:"全能专注效率助手",category:"效率",description:"番茄工作法(25+5循环)+待办清单+专注模式屏蔽干扰通知+每日专注时长数据统计。实现精力的精准投放。",longDescription:"番茄工作法(25+5循环)+待办清单+专注模式屏蔽干扰通知+每日专注时长数据统计。实现精力的精准投放，日积月累看见成长。",icon:"🍅",color:"#ff6b6b",hotness:"blazing",calls:367,rating:4.8,tags:["番茄钟","专注","待办"],keywords:["番茄","专注","效率","待办","todo","pomodoro","计时"],author:"杨小丹",version:"1.8.0",installGuide:"1. 打开 pomodoro.html 即可使用\n2. 点击「开始专注」启动25分钟倒计时\n3. 在待办清单添加今日任务\n4. 专注结束后自动进入5分钟休息\n5. 查看「统计」页面了解每日专注时长",demoUrl:"",downloadUrl:"",files:[]},
+  {id:201,name:"TradePilot 关务领航者",category:"物流",description:"一站式关务聚合平台，集关税计算器、实时汇率引擎、全球贸易资讯、FTA匹配与合规风险检查于一体，告别多系统跳转。",longDescription:"TradePilot 关务领航者是一个公司内部关税业务的一站式聚合平台。它把原本分散的关税计算器、实时汇率引擎、全球贸易资讯推送、合规风险检查等关务相关功能全部集中在一个平台上，让关务团队不再需要在多个系统间跳转，一个网站就覆盖了关税测算、FTA匹配、管制预警和贸易政策追踪的全部工作流。",icon:"🚢",color:"#f97316",hotness:"new",calls:42,rating:4.8,tags:["关税","FTA","贸易合规"],keywords:["关税","关务","贸易","tariff","trade","tradepilot","fta","汇率","合规"],author:"杨小丹",version:"1.0.0",installGuide:"点击「使用工具」直接在浏览器中打开 TradePilot，无需安装任何软件。",demoUrl:"https://jennyyaaa77.github.io/tradepilot/",downloadUrl:"",files:[]},
+  {id:202,name:"Inventory Query System",category:"物流",description:"按料号(PN)和库位(Location)快速查询库存记录，支持1002/1003/1004/1005/1S03多个库位，实时显示问题件与转移记录。",longDescription:"Inventory Query System 支持按料号(PN)和库位(Location)进行精准库存查询。覆盖1002（盘亏/问题件）、1003/1S03（移库单+移库原因）、1004（供应商+转移）、1005（备注）等多个库位，数据截至2025-04-14，支持模糊搜索，结果即时呈现。",icon:"📦",color:"#f97316",hotness:"hot",calls:87,rating:4.7,tags:["库存","PN查询","库位"],keywords:["库存","inventory","pn","part number","零件"],author:"杨小丹",version:"1.0.0",installGuide:"点击「使用工具」在浏览器中直接打开库存查询系统，无需安装。输入料号(PN)并选择库位后点击Search即可查询。",demoUrl:"./tools/inventory_query.html",downloadUrl:"",files:[]},
+  {id:203,name:"Freight Estimate",category:"物流",description:"PCG & ISG IB Transport运费估算工具，支持零担/整车/国内快递/海外快递四种运输方式，输入重量、体积、提货城市和板数即可估算。",longDescription:"PCG & ISG IB Transport Freight Estimate 工具，支持零担运费（按重量/城市计费）、整车运费（按板数匹配车型）、顺丰国内快递运费和顺丰海外快递运费四种运输方式的综合估算。覆盖全国主要城市，输入重量(kg)、体积(CBM)、提货城市和板数，一键获取各运输方式报价。",icon:"🚛",color:"#f97316",hotness:"hot",calls:134,rating:4.8,tags:["运费","物流","PCG"],keywords:["运费","freight","物流","shipping","快递","零担","整车"],author:"杨小丹",version:"1.0.0",installGuide:"点击「使用工具」在浏览器中直接打开运费估算工具，无需安装。填写重量、体积、城市和板数后点击「查询运费」。",demoUrl:"./tools/freight_estimate.html",downloadUrl:"",files:[]},
+  {id:204,name:"PCG Shipping Rule",category:"物流",description:"PCG发货规则查询系统，支持按Ship To Code、国家、GEO、Sub GEO和Incoterm筛选发货规则，包含联系人、合并规则、发货时间表等完整信息。",longDescription:"PCG Shipping Rule 发货规则查询系统（更新至2026.04.28），覆盖全球Ship-To地址的发货规则。支持按Ship To Code、国家、GEO地区、Sub GEO子区域、Incoterm条款多维度筛选，展示物流联系人、HIC联系人、合并规则、Hold状态、GL代码及Normal/DG发货时间表（20/40/60截单），支持逐行展开查看详细备注。",icon:"📋",color:"#f97316",hotness:"trending",calls:76,rating:4.6,tags:["发货规则","PCG","Incoterm"],keywords:["发货","ship to","发运规则","pcg","运输规则"],author:"杨小丹",version:"2026.04",installGuide:"点击「使用工具」在浏览器中直接打开PCG发货规则查询系统，无需安装。",demoUrl:"./tools/pcg_shipping_rules.html",downloadUrl:"",files:[]},
+  {id:205,name:"Shipping Box Forecast",category:"物流",description:"装箱预测工具，帮助物流团队提前规划包装需求，优化发货计划和仓储资源配置。",longDescription:"Shipping Box Forecast 装箱预测工具，帮助物流团队根据历史发货数据和计划订单，提前预测包装箱型和数量需求，有效避免包材短缺或库存积压，优化发货计划和仓储资源配置。",icon:"📫",color:"#f97316",hotness:"new",calls:23,rating:4.5,tags:["装箱","预测","包装"],keywords:["装箱","shipping box","包装","forecast","预测"],author:"杨小丹",version:"1.0.0",installGuide:"下载并解压zip文件，按照内部README说明运行工具。",demoUrl:"",downloadUrl:"./tools/shipping_box_forecast.zip",files:[]},
+  {id:206,name:"文档格式转换器",category:"效率",description:"Hanson出品的多格式文档转换工具，支持PDF/Word/Excel/PPT等常见格式互转，本地处理保障隐私安全。",longDescription:"Hanson Document Converter 是一款本地运行的多格式文档转换工具，支持 PDF、Word、Excel、PPT 等常见格式的互相转换。所有文件在本地处理，无需上传服务器，完全保障数据隐私。下载zip解压后按说明运行即可使用。",icon:"🔄",color:"#00d2ff",hotness:"new",calls:56,rating:4.6,tags:["文档","格式转换","PDF"],keywords:["文档","转换","document","convert","pdf","word","格式"],author:"Hanson",version:"1.0.0",installGuide:"1. 下载 document_converter.zip 并解压\n2. 阅读内部 README 文件\n3. 按说明安装依赖后运行\n4. 在浏览器或应用界面中使用",demoUrl:"",downloadUrl:"./tools/document_converter.zip",files:[]},
+  {id:207,name:"会议计时器",category:"效率",description:"Hanson出品的会议计时工具，支持多议程分项计时、倒计时提醒，让每场会议高效有序进行。",longDescription:"Hanson Meeting Timer 是一款专为会议设计的计时工具，支持多议程分项计时、自定义时间提醒和倒计时功能。可视化进度展示，帮助主持人有效控制会议节奏，避免超时，让每场会议高效有序进行。",icon:"⏱",color:"#34d399",hotness:"new",calls:31,rating:4.7,tags:["会议","计时","效率"],keywords:["会议","timer","计时","meeting","倒计时"],author:"Hanson",version:"1.0.0",installGuide:"1. 下载 meeting_timer.zip 并解压\n2. 阅读内部 README 文件\n3. 在浏览器中打开 index.html 即可使用",demoUrl:"",downloadUrl:"./tools/meeting_timer.zip",files:[]},
+  {id:208,name:"时区时间转换器",category:"效率",description:"Hanson出品的全球时区时间转换工具，支持多时区同步对比显示，快速计算跨国会议最佳时间。",longDescription:"Hanson Time Converter 是一款全球时区时间转换工具，支持200+时区同步对比显示，快速计算跨国会议最佳时间段，内置夏令时自动处理。适合需要频繁跟进海外业务的团队使用。",icon:"🕐",color:"#00d2ff",hotness:"new",calls:44,rating:4.5,tags:["时区","时间转换","跨国"],keywords:["时区","时间","time","converter","时差"],author:"Hanson",version:"1.0.0",installGuide:"1. 下载 time_converter.zip 并解压\n2. 阅读内部 README 文件\n3. 在浏览器中打开 index.html 即可使用",demoUrl:"",downloadUrl:"./tools/time_converter.zip",files:[]},
+  {id:209,name:"实时天气助手",category:"信息",description:"Hanson出品的天气查询工具，支持全球城市实时天气、未来7天预报和空气质量指数查看，界面简洁美观。",longDescription:"Hanson Weather 是一款实时天气查询工具，支持全球城市天气数据查询，包括实时气温、湿度、风速风向、体感温度、未来7天天气预报及空气质量指数(AQI)。界面简洁美观，适合差旅、物流和跨国业务场景。",icon:"🌤",color:"#ffd93d",hotness:"new",calls:28,rating:4.6,tags:["天气","预报","AQI"],keywords:["天气","weather","温度","气象","预报"],author:"Hanson",version:"1.0.0",installGuide:"1. 下载 weather.zip 并解压\n2. 阅读内部 README 文件\n3. 在浏览器中打开 index.html 即可使用",demoUrl:"",downloadUrl:"./tools/weather.zip",files:[]}
+];
+
+const DEFAULT_DEMANDS = [
+  {id:1,user:"张工程师",avatar:"张",demand:"需要一个能处理多模态输入的对话助手",votes:234,status:"进行中",time:"2小时前"},
+  {id:2,user:"李产品",avatar:"李",demand:"希望有批量处理图片的功能，支持自定义水印",votes:189,status:"规划中",time:"5小时前"},
+  {id:3,user:"王数据",avatar:"王",demand:"数据分析工具增加时序预测能力，支持ARIMA模型",votes:156,status:"评估中",time:"1天前"},
+  {id:4,user:"陈设计",avatar:"陈",demand:"图像生成支持参考图权重调节，增加精细控制",votes:143,status:"进行中",time:"1天前"},
+  {id:5,user:"刘运营",avatar:"刘",demand:"文本工具增加SEO优化建议功能",votes:98,status:"规划中",time:"2天前"}
+];
+
+const STATUS_STYLES = {
+  "进行中":{color:"#34d399",bg:"rgba(52,211,153,0.15)"},
+  "规划中":{color:"#00d2ff",bg:"rgba(0,210,255,0.15)"},
+  "评估中":{color:"#ffd700",bg:"rgba(255,215,0,0.15)"}
+};
+
+const HOTNESS_LABELS = {
+  "blazing":{cls:"hot-blazing",label:"🔥 爆款"},
+  "hot":{cls:"hot-hot",label:"⚡ 热门"},
+  "trending":{cls:"hot-trending",label:"📈 趋势"},
+  "new":{cls:"hot-new",label:"✨ 新品"}
+};
+
+const ACTIVITY_INITIAL = [
+  {id:1,user:"小明",action:"收藏了",tool:"CodeMind X",time:"刚刚",type:"favorite"},
+  {id:2,user:"设计团队",action:"调用了",tool:"PixelForge AI",time:"1分钟前",type:"call"},
+  {id:3,user:"数据部",action:"评价了",tool:"DataSage Analytics",time:"3分钟前",type:"review"},
+  {id:4,user:"Tech Lead",action:"使用了",tool:"NeuralWrite Pro",time:"5分钟前",type:"comment"},
+  {id:5,user:"新用户",action:"首次使用",tool:"ChatFlux Pro",time:"8分钟前",type:"new"},
+  {id:6,user:"运营团队",action:"推荐了",tool:"AutoFlow Engine",time:"12分钟前",type:"recommend"},
+  {id:7,user:"杨小丹",action:"更新了",tool:"桌面自动整理神器",time:"15分钟前",type:"update"},
+  {id:8,user:"产品组",action:"调用了",tool:"Excel驱动型动态看板",time:"18分钟前",type:"call"}
+];
+
+const ACTIVITY_ICONS = {
+  favorite:{icon:"★",color:"#ffd700"},
+  call:{icon:"⚡",color:"#00d2ff"},
+  review:{icon:"✦",color:"#34d399"},
+  comment:{icon:"💬",color:"#c084fc"},
+  new:{icon:"✨",color:"#7b2ff7"},
+  recommend:{icon:"→",color:"#00d2ff"},
+  update:{icon:"↑",color:"#34d399"}
+};
+
+// ===================================================================
+// STATE
+// ===================================================================
+let state = {
+  tools: [...DEMO_TOOLS,...TEAM_TOOLS],
+  demands: [...DEFAULT_DEMANDS],
+  comments: {},
+  votedDemands: new Set(),
+  currentFilter: 'all',
+  currentSearch: '',
+  editingToolId: null,
+  editingDeleteConfirm: false,
+  editAttachFiles: [],    // {name, size, dataUrl} for edit modal
+  submitAttachFiles: [],  // for submit tool modal
+  pendingUseTool: null,   // {tool} for choice modal
+  activities: [...ACTIVITY_INITIAL]
+};
+
+function loadState(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const saved = JSON.parse(raw);
+      if(saved.version && saved.version >= DATA_VERSION){
+        // merge: keep base tools, add user tools (id > 1e6)
+        const userTools = (saved.tools||[]).filter(t => t.id > 1e6);
+        state.tools = [...DEMO_TOOLS,...TEAM_TOOLS,...userTools];
+        if(saved.demands) state.demands = saved.demands;
+        if(saved.comments) state.comments = saved.comments;
+        return;
+      }
+    }
+  } catch(e){}
+}
+
+function saveState(){
+  const userTools = state.tools.filter(t => t.id > 1e6);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    version: DATA_VERSION,
+    tools: [...DEMO_TOOLS,...TEAM_TOOLS,...userTools],
+    demands: state.demands,
+    comments: state.comments
+  }));
+}
+
+// ===================================================================
+// TOAST
+// ===================================================================
+function showToast(msg, type='success', duration=3000){
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type} fade-in`;
+  const icons = {success:'✓',warning:'⚠',error:'✕',info:'ℹ'};
+  el.innerHTML = `<span>${icons[type]||'✓'}</span><span style="flex:1">${msg}</span>`;
+  container.appendChild(el);
+  setTimeout(()=>{
+    el.classList.add('leaving');
+    setTimeout(()=>el.remove(), 300);
+  }, duration);
+}
+
+// ===================================================================
+// MOBILE MENU
+// ===================================================================
+function toggleMobileMenu(){
+  const m = document.getElementById('mobile-menu');
+  m.classList.toggle('open');
+}
+
+// ===================================================================
+// COUNTER ANIMATION
+// ===================================================================
+function animateCounter(el, target, suffix=''){
+  let cur = 0;
+  const step = target / 60;
+  const interval = setInterval(()=>{
+    cur = Math.min(cur + step, target);
+    const val = cur >= 10000 ? (cur/10000).toFixed(1)+'万' : Math.floor(cur).toLocaleString();
+    el.textContent = val + suffix;
+    if(cur >= target) clearInterval(interval);
+  }, 20);
+}
+
+// ===================================================================
+// TOOLS RENDERING
+// ===================================================================
+function getFilteredTools(){
+  let tools = state.tools;
+  if(state.currentFilter !== 'all'){
+    tools = tools.filter(t => t.category === state.currentFilter);
+  }
+  if(state.currentSearch){
+    const q = state.currentSearch.toLowerCase();
+    tools = tools.filter(t =>
+      t.name.toLowerCase().includes(q) ||
+      (t.description||'').toLowerCase().includes(q) ||
+      (t.keywords||[]).some(k => k.toLowerCase().includes(q)) ||
+      (t.tags||[]).some(k => k.toLowerCase().includes(q))
+    );
+  }
+  return tools;
+}
+
+function renderTools(){
+  const grid = document.getElementById('tools-grid');
+  const tools = getFilteredTools();
+  if(!tools.length){
+    grid.innerHTML = `<div class="tools-empty" style="grid-column:1/-1"><div class="tools-empty-icon">🔍</div><p>没有找到匹配的工具</p></div>`;
+    return;
+  }
+  grid.innerHTML = tools.map(t => toolCardHTML(t)).join('');
+}
+
+function toolCardHTML(t){
+  const hInfo = HOTNESS_LABELS[t.hotness] || HOTNESS_LABELS['new'];
+  const callsStr = t.calls >= 10000 ? (t.calls/10000).toFixed(1)+'万' : t.calls.toLocaleString();
+  const stars = '★'.repeat(Math.round(t.rating||0));
+  const hasAttachments = (t.files && t.files.length > 0) || t.downloadUrl;
+  return `
+  <div class="tool-card" onclick="openToolDetail(${t.id})">
+    <div class="tool-card-header">
+      <div class="tool-card-icon" style="background:${t.color}20;border:1px solid ${t.color}40">${t.icon||'🔧'}</div>
+      <div class="tool-card-info">
+        <div class="tool-card-name">${t.name}</div>
+        <div class="tool-card-cat">${t.category||'其他'}</div>
+        <div class="tool-card-badges">
+          <span class="tool-badge-hot ${hInfo.cls}" style="font-size:10px;padding:2px 7px;border-radius:100px">${hInfo.label}</span>
+          ${hasAttachments ? '<span style="font-size:10px;padding:2px 7px;border-radius:100px;background:rgba(0,210,255,0.12);border:1px solid rgba(0,210,255,0.3);color:#00d2ff">📎 附件</span>' : ''}
+        </div>
+      </div>
+      ${isAdmin() ? `<button class="btn-edit-tool" onclick="event.stopPropagation();openEditTool(${t.id})">⚙</button>` : ''}
+    </div>
+    <div class="tool-card-desc">${t.description||''}</div>
+    <div class="tool-card-footer">
+      <div class="tool-card-meta">
+        <span class="tool-card-calls">调用 ${callsStr}</span>
+        <span class="tool-card-rating">${stars} ${t.rating||''}</span>
+      </div>
+      <button class="btn-use-tool" onclick="event.stopPropagation();useTool(${t.id})">▶ 使用工具</button>
+    </div>
+  </div>`;
+}
+
+function filterTools(cat, btn){
+  state.currentFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTools();
+}
+
+function searchTools(q){
+  state.currentSearch = q;
+  renderTools();
+}
+
+// ===================================================================
+// ADMIN MODE (edit button shows for all for demo; you can gate it)
+// ===================================================================
+function isAdmin(){ return true; }
+
+// ===================================================================
+// USE TOOL LOGIC (✨ NEW: choice dialog when both URL + attachment)
+// ===================================================================
+function useTool(id){
+  const tool = state.tools.find(t => t.id === id);
+  if(!tool) return;
+
+  const hasUrl = tool.demoUrl && tool.demoUrl.trim() && !tool.demoUrl.startsWith('./');
+  const hasDownload = tool.downloadUrl && tool.downloadUrl.trim();
+  const hasFileAttachments = tool.files && tool.files.length > 0;
+  const hasAttachment = hasDownload || hasFileAttachments;
+
+  if(hasUrl && hasAttachment){
+    // ✨ Show choice dialog
+    state.pendingUseTool = tool;
+    document.getElementById('choice-tool-name').textContent = '▶ 使用 ' + tool.name;
+    // Show attachment info
+    let attInfo = '下载工具文件到本地';
+    if(hasFileAttachments){
+      attInfo = `下载附件（${tool.files.length} 个文件）`;
+    } else if(hasDownload){
+      attInfo = '下载 ' + tool.downloadUrl.split('/').pop();
+    }
+    document.getElementById('choice-btn-file-sub').textContent = attInfo;
+    openModal('modal-use-choice');
+  } else if(hasUrl){
+    window.open(tool.demoUrl, '_blank');
+    showToast(`正在打开 ${tool.name}`, 'success');
+    incrementCalls(id);
+  } else if(hasAttachment){
+    if(hasFileAttachments){
+      showToast('附件为演示数据，实际部署后可下载', 'info');
+    } else {
+      // Try to open the download URL
+      const a = document.createElement('a');
+      a.href = tool.downloadUrl;
+      a.download = tool.downloadUrl.split('/').pop();
+      a.click();
+      showToast(`正在下载 ${a.download}`, 'success');
+    }
+    incrementCalls(id);
+  } else if(tool.installGuide){
+    openToolDetail(id);
+    showToast('请查看使用说明', 'info');
+  } else {
+    showToast('暂无可用链接或附件，请联系工具作者', 'warning');
+  }
+}
+
+function choiceOpenUrl(){
+  const tool = state.pendingUseTool;
+  if(!tool) return;
+  closeModal('modal-use-choice');
+  window.open(tool.demoUrl, '_blank');
+  showToast(`正在打开 ${tool.name}`, 'success');
+  incrementCalls(tool.id);
+  state.pendingUseTool = null;
+}
+
+function choiceDownload(){
+  const tool = state.pendingUseTool;
+  if(!tool) return;
+  closeModal('modal-use-choice');
+  if(tool.files && tool.files.length > 0){
+    tool.files.forEach(f => {
+      if(f.dataUrl){
+        const a = document.createElement('a');
+        a.href = f.dataUrl;
+        a.download = f.name;
+        a.click();
+        showToast(`正在下载 ${f.name}`, 'success');
+      } else {
+        showToast(`${f.name}（演示模式，实际部署后可下载）`, 'info');
+      }
+    });
+  } else if(tool.downloadUrl){
+    const a = document.createElement('a');
+    a.href = tool.downloadUrl;
+    a.download = tool.downloadUrl.split('/').pop();
+    a.click();
+    showToast(`正在下载 ${a.download}`, 'success');
+  }
+  incrementCalls(tool.id);
+  state.pendingUseTool = null;
+}
+
+function incrementCalls(id){
+  const tool = state.tools.find(t => t.id === id);
+  if(tool) tool.calls = (tool.calls||0) + 1;
+  renderTools();
+}
+
+// ===================================================================
+// TOOL DETAIL MODAL
+// ===================================================================
+function openToolDetail(id){
+  const tool = state.tools.find(t => t.id === id);
+  if(!tool) return;
+  const comments = state.comments[id] || [];
+  const hInfo = HOTNESS_LABELS[tool.hotness] || HOTNESS_LABELS['new'];
+  const stars = '★'.repeat(Math.round(tool.rating||0));
+  const callsStr = tool.calls >= 10000 ? (tool.calls/10000).toFixed(1)+'万' : (tool.calls||0).toLocaleString();
+  const hasUrl = tool.demoUrl && tool.demoUrl.trim() && !tool.demoUrl.startsWith('./');
+  const hasDownload = tool.downloadUrl && tool.downloadUrl.trim();
+  const hasFileAttachments = tool.files && tool.files.length > 0;
+
+  let attachSection = '';
+  if(hasFileAttachments || hasDownload){
+    const items = [];
+    if(hasFileAttachments){
+      tool.files.forEach(f => {
+        const ext = f.name.split('.').pop().toUpperCase();
+        const sizeStr = f.size ? (f.size > 1024*1024 ? (f.size/1024/1024).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB') : '未知大小';
+        items.push(`
+          <div class="detail-attach-item">
+            <div class="detail-attach-item-left">
+              <div class="detail-attach-icon">📎</div>
+              <div>
+                <div class="detail-attach-name">${f.name}</div>
+                <div class="detail-attach-size">${ext} · ${sizeStr}</div>
+              </div>
+            </div>
+            <button class="btn-download" onclick="downloadAttach('${id}','${f.name}')">↓ 下载</button>
+          </div>`);
+      });
+    }
+    if(hasDownload){
+      const fname = tool.downloadUrl.split('/').pop();
+      const ext = fname.split('.').pop().toUpperCase();
+      items.push(`
+        <div class="detail-attach-item">
+          <div class="detail-attach-item-left">
+            <div class="detail-attach-icon">📦</div>
+            <div>
+              <div class="detail-attach-name">${fname}</div>
+              <div class="detail-attach-size">${ext}</div>
+            </div>
+          </div>
+          <button class="btn-download" onclick="window.open('${tool.downloadUrl}','_blank');showToast('正在下载 ${fname}','success')">↓ 下载</button>
+        </div>`);
+    }
+    attachSection = `
+      <div class="detail-section">
+        <div class="detail-section-title">📎 附件下载</div>
+        <div class="detail-attach-list">${items.join('')}</div>
+      </div>`;
+  }
+
+  let commentsHtml = '';
+  if(comments.length){
+    commentsHtml = comments.map(c => `
+      <div class="comment-item">
+        <div class="comment-author">${c.author||'匿名用户'}</div>
+        <div class="comment-text">${c.text}</div>
+      </div>`).join('');
+  } else {
+    commentsHtml = '<div class="comment-empty">暂无评论，来留下第一条吧</div>';
+  }
+
+  document.getElementById('modal-detail-body').innerHTML = `
+    <div class="modal-title-row">
+      <div style="font-size:12px;color:rgba(226,232,240,0.45)">工具详情</div>
+      <button class="modal-close" onclick="closeModal('modal-detail')">✕</button>
+    </div>
+    <div class="detail-header">
+      <div class="detail-icon" style="background:${tool.color}20;border:1px solid ${tool.color}40">${tool.icon||'🔧'}</div>
+      <div>
+        <div class="detail-name">${tool.name}</div>
+        <div class="detail-meta">
+          <span><strong>${tool.author||''}</strong></span>
+          <span>v${tool.version||'1.0'}</span>
+          <span>使用次数 <strong>${callsStr}</strong></span>
+          <span class="stars">${stars}</span>
+          <span style="color:rgba(226,232,240,0.6)">${tool.rating||''}</span>
+          <span class="tool-badge-hot ${hInfo.cls}" style="font-size:10px;padding:2px 8px;border-radius:100px">${hInfo.label}</span>
+        </div>
+      </div>
+    </div>
+    <div class="detail-desc">${tool.longDescription||tool.description||''}</div>
+    ${(tool.tags||[]).length ? `<div class="detail-tags">${(tool.tags||[]).map(tag=>`<span class="detail-tag">${tag}</span>`).join('')}</div>` : ''}
+    ${tool.installGuide ? `
+    <div class="detail-section">
+      <div class="detail-section-title">📖 使用说明</div>
+      <div class="install-guide">${tool.installGuide}</div>
+    </div>` : ''}
+    ${attachSection}
+    <div class="detail-section">
+      <div class="detail-section-title">💬 用户评论</div>
+      <div class="comment-list">${commentsHtml}</div>
+      <div class="comment-form">
+        <input id="comment-author-${id}" class="comment-input-name" placeholder="你的名字（选填）" />
+        <textarea id="comment-text-${id}" class="comment-textarea" rows="2" placeholder="分享你的使用体验或建议..."></textarea>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:11px;color:rgba(226,232,240,0.35)">Ctrl+Enter 快速发布</span>
+          <button class="btn-comment" onclick="submitComment(${id})">发布</button>
+        </div>
+      </div>
+    </div>
+    <div class="detail-action-row">
+      ${hasUrl ? `<button class="btn-primary" style="font-size:13px;padding:10px 20px" onclick="window.open('${tool.demoUrl}','_blank');incrementCalls(${id});showToast('正在打开 ${tool.name}','success')">↗ 打开网页工具</button>` : ''}
+      ${(hasDownload||hasFileAttachments) ? `<button class="btn-secondary" style="font-size:13px;padding:10px 20px" onclick="useTool(${id});closeModal('modal-detail')">↓ 下载附件</button>` : ''}
+      ${isAdmin() ? `<button class="btn-secondary" style="font-size:13px;padding:10px 20px" onclick="closeModal('modal-detail');openEditTool(${id})">⚙ 编辑工具</button>` : ''}
+    </div>`;
+
+  // Add keyboard shortcut for comment
+  setTimeout(() => {
+    const ta = document.getElementById(`comment-text-${id}`);
+    if(ta) ta.addEventListener('keydown', e => {
+      if(e.ctrlKey && e.key === 'Enter') submitComment(id);
+    });
+  }, 100);
+
+  openModal('modal-detail');
+}
+
+function downloadAttach(toolId, fileName){
+  const tool = state.tools.find(t => t.id == toolId);
+  if(!tool) return;
+  const file = (tool.files||[]).find(f => f.name === fileName);
+  if(file && file.dataUrl){
+    const a = document.createElement('a');
+    a.href = file.dataUrl;
+    a.download = file.name;
+    a.click();
+    showToast(`正在下载 ${file.name}`, 'success');
+  } else {
+    showToast(`${fileName}（演示模式，实际部署后可下载）`, 'info');
+  }
+}
+
+function submitComment(toolId){
+  const author = (document.getElementById(`comment-author-${toolId}`)||{}).value || '匿名用户';
+  const text = (document.getElementById(`comment-text-${toolId}`)||{}).value || '';
+  if(!text.trim()){ showToast('请输入评论内容', 'warning'); return; }
+  if(!state.comments[toolId]) state.comments[toolId] = [];
+  state.comments[toolId].push({author: author||'匿名用户', text: text.trim()});
+  saveState();
+  showToast('评论已发布 ✓', 'success');
+  openToolDetail(toolId); // refresh
+}
+
+// ===================================================================
+// EDIT TOOL MODAL
+// ===================================================================
+function openEditTool(id){
+  const tool = state.tools.find(t => t.id === id);
+  if(!tool) return;
+  state.editingToolId = id;
+  state.editingDeleteConfirm = false;
+  state.editAttachFiles = tool.files ? [...tool.files] : [];
+
+  document.getElementById('edit-icon').value = tool.icon||'';
+  document.getElementById('edit-name').value = tool.name||'';
+  document.getElementById('edit-category').value = tool.category||'其他';
+  document.getElementById('edit-desc').value = tool.description||'';
+  document.getElementById('edit-longdesc').value = tool.longDescription||'';
+  document.getElementById('edit-author').value = tool.author||'';
+  document.getElementById('edit-url').value = tool.demoUrl||'';
+  document.getElementById('edit-guide').value = tool.installGuide||'';
+
+  const btn = document.getElementById('btn-delete');
+  btn.className = 'btn-delete';
+  btn.textContent = '🗑 删除';
+  document.getElementById('delete-warn').style.display = 'none';
+
+  renderEditAttachList();
+  openModal('modal-edit');
+}
+
+function renderEditAttachList(){
+  const list = document.getElementById('edit-attach-list');
+  if(!state.editAttachFiles.length){ list.innerHTML=''; return; }
+  list.innerHTML = state.editAttachFiles.map((f,i) => {
+    const sizeStr = f.size ? (f.size > 1024*1024 ? (f.size/1024/1024).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB') : '已上传';
+    return `<div class="attach-item">
+      <div class="attach-item-left">
+        <span>📎</span>
+        <span class="attach-item-name">${f.name}</span>
+      </div>
+      <span class="attach-item-size">${sizeStr}</span>
+      <button class="attach-item-del" onclick="removeEditAttach(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function removeEditAttach(i){
+  state.editAttachFiles.splice(i, 1);
+  renderEditAttachList();
+}
+
+function handleAttachFiles(files){
+  Array.from(files).forEach(f => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      state.editAttachFiles.push({name: f.name, size: f.size, dataUrl: e.target.result});
+      renderEditAttachList();
+    };
+    reader.readAsDataURL(f);
+  });
+  document.getElementById('attach-file-input').value = '';
+}
+
+function handleAttachDrop(e){
+  e.preventDefault();
+  document.getElementById('attach-drop-zone').classList.remove('drag-over');
+  const files = e.dataTransfer.files;
+  if(files.length) handleAttachFiles(files);
+}
+
+function saveEditTool(){
+  const id = state.editingToolId;
+  if(!id) return;
+  const name = document.getElementById('edit-name').value.trim();
+  if(!name){ showToast('工具名称不能为空','warning'); return; }
+  const idx = state.tools.findIndex(t => t.id === id);
+  if(idx === -1) return;
+  state.tools[idx] = {
+    ...state.tools[idx],
+    icon: document.getElementById('edit-icon').value||'🔧',
+    name,
+    category: document.getElementById('edit-category').value,
+    description: document.getElementById('edit-desc').value,
+    longDescription: document.getElementById('edit-longdesc').value,
+    author: document.getElementById('edit-author').value,
+    demoUrl: document.getElementById('edit-url').value,
+    installGuide: document.getElementById('edit-guide').value,
+    files: [...state.editAttachFiles]
+  };
+  saveState();
+  showToast(`「${name}」已更新 ✓`, 'success');
+  closeModal('modal-edit');
+  renderTools();
+}
+
+function confirmDeleteTool(){
+  if(!state.editingDeleteConfirm){
+    state.editingDeleteConfirm = true;
+    const btn = document.getElementById('btn-delete');
+    btn.className = 'btn-delete confirm';
+    btn.textContent = '⚠ 确认删除';
+    document.getElementById('delete-warn').style.display = 'block';
+    return;
+  }
+  const id = state.editingToolId;
+  const tool = state.tools.find(t => t.id === id);
+  state.tools = state.tools.filter(t => t.id !== id);
+  saveState();
+  showToast(`已删除「${tool?.name||'工具'}」`, 'warning');
+  closeModal('modal-edit');
+  renderTools();
+}
+
+// ===================================================================
+// SUBMIT TOOL MODAL
+// ===================================================================
+function openSubmitTool(){
+  state.submitAttachFiles = [];
+  document.getElementById('st-icon').value = '🔧';
+  document.getElementById('st-name').value = '';
+  document.getElementById('st-category').value = '效率';
+  document.getElementById('st-desc').value = '';
+  document.getElementById('st-url').value = '';
+  document.getElementById('st-author').value = '';
+  document.getElementById('st-attach-list').innerHTML = '';
+  openModal('modal-submit-tool');
+}
+
+function handleStFiles(files){
+  Array.from(files).forEach(f => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      state.submitAttachFiles.push({name: f.name, size: f.size, dataUrl: e.target.result});
+      renderStAttachList();
+    };
+    reader.readAsDataURL(f);
+  });
+  document.getElementById('st-file-input').value = '';
+}
+
+function renderStAttachList(){
+  const list = document.getElementById('st-attach-list');
+  if(!state.submitAttachFiles.length){ list.innerHTML=''; return; }
+  list.innerHTML = state.submitAttachFiles.map((f,i) => {
+    const sizeStr = f.size > 1024*1024 ? (f.size/1024/1024).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB';
+    return `<div class="attach-item">
+      <div class="attach-item-left"><span>📎</span><span class="attach-item-name">${f.name}</span></div>
+      <span class="attach-item-size">${sizeStr}</span>
+      <button class="attach-item-del" onclick="state.submitAttachFiles.splice(${i},1);renderStAttachList()">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function saveNewTool(){
+  const name = document.getElementById('st-name').value.trim();
+  if(!name){ showToast('工具名称不能为空','warning'); return; }
+  const newTool = {
+    id: Date.now(),
+    icon: document.getElementById('st-icon').value||'🔧',
+    name,
+    category: document.getElementById('st-category').value,
+    description: document.getElementById('st-desc').value,
+    longDescription: document.getElementById('st-desc').value,
+    demoUrl: document.getElementById('st-url').value,
+    downloadUrl: '',
+    author: document.getElementById('st-author').value||'团队成员',
+    version: '1.0.0',
+    hotness: 'new',
+    calls: 0,
+    rating: 0,
+    tags: [],
+    keywords: [],
+    installGuide: '',
+    files: [...state.submitAttachFiles]
+  };
+  state.tools.push(newTool);
+  saveState();
+  showToast(`「${name}」已添加到百宝箱 ✓`, 'success');
+  closeModal('modal-submit-tool');
+  renderTools();
+}
+
+// ===================================================================
+// DEMAND WALL (✨ NEW: submit demand)
+// ===================================================================
+function renderDemandList(){
+  const list = document.getElementById('demand-list');
+  list.innerHTML = state.demands.map(d => {
+    const st = STATUS_STYLES[d.status] || STATUS_STYLES['规划中'];
+    const voted = state.votedDemands.has(d.id);
+    return `<div class="demand-item">
+      <div class="demand-avatar">${d.avatar||d.user.slice(0,1)}</div>
+      <div class="demand-info">
+        <div class="demand-user-row">
+          <span class="demand-user">${d.user}</span>
+          <span class="demand-status" style="background:${st.bg};color:${st.color}">${d.status}</span>
+          <span class="demand-time">${d.time}</span>
+        </div>
+        <div class="demand-text">${d.demand}</div>
+      </div>
+      <button class="demand-vote-btn ${voted?'voted':''}" onclick="${voted?'':` voteDemand(${d.id},'${d.user}')`}" ${voted?'disabled':''}>
+        <span class="demand-vote-arrow">${voted?'▲':'△'}</span>
+        <span class="demand-vote-count">${d.votes}</span>
+      </button>
+    </div>`;
+  }).join('');
+  document.getElementById('demand-count-badge').textContent = state.demands.length + ' 条需求';
+}
+
+function voteDemand(id, user){
+  if(state.votedDemands.has(id)) return;
+  state.votedDemands.add(id);
+  const d = state.demands.find(x => x.id === id);
+  if(d){ d.votes++; }
+  showToast(`已为 "${user}" 的需求投票 +1`, 'success');
+  renderDemandList();
+}
+
+function openSubmitDemand(){
+  document.getElementById('demand-user-name').value = '';
+  document.getElementById('demand-text').value = '';
+  document.getElementById('demand-status').value = '规划中';
+  document.getElementById('demand-char-count').textContent = '0';
+  openModal('modal-submit-demand');
+}
+
+function updateDemandCount(el){
+  document.getElementById('demand-char-count').textContent = el.value.length;
+}
+
+function submitDemand(){
+  const text = document.getElementById('demand-text').value.trim();
+  if(!text){ showToast('请描述你的需求', 'warning'); return; }
+  const userName = document.getElementById('demand-user-name').value.trim() || '匿名用户';
+  const status = document.getElementById('demand-status').value;
+  const avatar = userName === '匿名用户' ? '匿' : userName.slice(0,1);
+  const newDemand = {
+    id: Date.now(),
+    user: userName,
+    avatar,
+    demand: text,
+    votes: 1,
+    status,
+    time: '刚刚'
+  };
+  state.demands.unshift(newDemand);
+  state.votedDemands.add(newDemand.id); // auto-vote own demand
+  saveState();
+  showToast('需求已提交，感谢你的贡献 ✓', 'success');
+  closeModal('modal-submit-demand');
+  renderDemandList();
+}
+
+// ===================================================================
+// ACTIVITY FEED
+// ===================================================================
+function renderActivityFeed(){
+  const list = document.getElementById('activity-list');
+  list.innerHTML = state.activities.map((a,i) => {
+    const info = ACTIVITY_ICONS[a.type] || ACTIVITY_ICONS.call;
+    return `<div class="activity-item" style="opacity:${Math.max(0.3,1-i*0.08)};background:${i===0?'rgba(0,210,255,0.04)':'transparent'}">
+      <div class="activity-icon-wrap" style="background:${info.color}20;color:${info.color};border:1px solid ${info.color}35">${info.icon}</div>
+      <div class="activity-text">
+        <span style="color:#e2e8f0;font-weight:500">${a.user}</span>
+        <span style="color:rgba(226,232,240,0.5);margin:0 4px">${a.action}</span>
+        <span style="color:${info.color};font-weight:500">${a.tool}</span>
+      </div>
+      <span class="activity-time">${a.time}</span>
+    </div>`;
+  }).join('');
+}
+
+const ACTIVITY_USERS = ["Alex","小花","Bob团队","数据组","PMO","研发部","测试团队","运营组","设计部"];
+const ACTIVITY_TOOLS_LIST = ["CodeMind X","PixelForge AI","NeuralWrite Pro","ChatFlux Pro","DataSage Analytics","桌面自动整理神器","Excel驱动型动态看板"];
+const ACTIVITY_TYPES = ["favorite","call","review","recommend"];
+const ACTIVITY_ACTIONS = {favorite:"收藏了",call:"调用了",review:"评价了",recommend:"推荐了"};
+
+function addRandomActivity(){
+  const user = ACTIVITY_USERS[Math.floor(Math.random()*ACTIVITY_USERS.length)];
+  const type = ACTIVITY_TYPES[Math.floor(Math.random()*ACTIVITY_TYPES.length)];
+  const tool = ACTIVITY_TOOLS_LIST[Math.floor(Math.random()*ACTIVITY_TOOLS_LIST.length)];
+  state.activities = [{id:Date.now(), user, action:ACTIVITY_ACTIONS[type], tool, time:"刚刚", type}, ...state.activities.slice(0,9)];
+  renderActivityFeed();
+}
+
+// ===================================================================
+// STATS CARDS
+// ===================================================================
+function renderStats(){
+  const totalCalls = state.tools.reduce((s,t) => s+(t.calls||0), 0);
+  const cards = [
+    {icon:"🧰",label:"工具总数",value:state.tools.length,delta:"+3",deltaUp:true,color:"#7b2ff7",accent:"#c084fc"},
+    {icon:"⚡",label:"总调用量",value:totalCalls,delta:"12.5%",deltaUp:true,color:"#00d2ff",accent:"#00d2ff"},
+    {icon:"👥",label:"活跃用户",value:238,delta:"8.3%",deltaUp:true,color:"#34d399",accent:"#34d399"},
+    {icon:"⭐",label:"平均评分",value:4.8,delta:"0.2",deltaUp:true,color:"#ffd700",accent:"#ffd700",isFloat:true}
+  ];
+  const grid = document.getElementById('stats-grid');
+  grid.innerHTML = cards.map(c => {
+    const valStr = c.isFloat ? c.value : (c.value >= 10000 ? (c.value/10000).toFixed(1)+'万' : c.value.toLocaleString());
+    return `<div class="stat-card glass-card" style="border:1px solid ${c.color}33">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
+        <div class="stat-card-icon" style="background:${c.color}20;border:1px solid ${c.color}50;box-shadow:0 0 16px ${c.color}30">${c.icon}</div>
+        <div class="stat-card-delta" style="background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3)">▲ ${c.delta}</div>
+      </div>
+      <div style="font-size:30px;font-weight:800;color:${c.accent};text-shadow:0 0 20px ${c.accent}60;margin-bottom:4px">${valStr}</div>
+      <div style="font-size:13px;color:rgba(226,232,240,0.5)">${c.label}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===================================================================
+// AGENT / SMART ROUTER
+// ===================================================================
+const KEYWORD_MAP = [
+  {kws:["育儿","宝宝","睡眠","哄睡","wake","window"],ids:[101]},
+  {kws:["新闻","情报","热点","资讯","推送","早报"],ids:[102]},
+  {kws:["报告","简报","模板","汇报","ppt","slide"],ids:[103]},
+  {kws:["excel","看板","仪表盘","dashboard","报表","进度"],ids:[104]},
+  {kws:["桌面","整理","文件","归类","文件夹","分类"],ids:[105]},
+  {kws:["对比","差异","订单","匹配","比较","diff"],ids:[106]},
+  {kws:["番茄","专注","效率","待办","todo","计时","pomodoro"],ids:[107]},
+  {kws:["关税","关务","贸易","tariff","fta","汇率","合规"],ids:[201]},
+  {kws:["库存","inventory","pn","零件","part"],ids:[202]},
+  {kws:["运费","freight","物流","shipping","快递","零担","整车"],ids:[203]},
+  {kws:["发货规则","ship to","pcg","发运","运输规则"],ids:[204]},
+  {kws:["装箱","packaging","包装","forecast"],ids:[205]},
+  {kws:["文档","转换","document","convert","pdf","word","格式"],ids:[206]},
+  {kws:["会议","timer","meeting","倒计时","计时"],ids:[207]},
+  {kws:["时区","时间","time","converter","时差"],ids:[208]},
+  {kws:["天气","weather","温度","气象","预报"],ids:[209]},
+  {kws:["写作","文本","文案","内容","创作","gpt"],ids:[1]},
+  {kws:["图像","图片","生成","绘画","sd","stable"],ids:[2]},
+  {kws:["代码","编程","补全","debug","调试"],ids:[3]},
+  {kws:["数据","分析","sql","查询","bi"],ids:[4]},
+  {kws:["对话","聊天","知识库","rag","企业"],ids:[5]},
+  {kws:["自动化","工作流","rpa","无代码","流程"],ids:[6]}
+];
+
+function runAgent(){
+  const q = document.getElementById('agent-input').value.trim().toLowerCase();
+  if(!q){ showToast('请输入你的需求描述','warning'); return; }
+
+  const analyzing = document.getElementById('agent-analyzing');
+  const result = document.getElementById('agent-result');
+  analyzing.style.display='block';
+  result.style.display='none';
+
+  setTimeout(()=>{
+    analyzing.style.display='none';
+    // Match tools
+    const matchedIds = new Set();
+    KEYWORD_MAP.forEach(rule => {
+      if(rule.kws.some(kw => q.includes(kw))){
+        rule.ids.forEach(id => matchedIds.add(id));
+      }
+    });
+    // Fallback: search all tools
+    if(!matchedIds.size){
+      state.tools.forEach(t => {
+        if(t.name.toLowerCase().includes(q) ||
+           (t.description||'').toLowerCase().includes(q) ||
+           (t.keywords||[]).some(k=>q.includes(k))){
+          matchedIds.add(t.id);
+        }
+      });
+    }
+    const matched = [...matchedIds].slice(0,4).map(id => state.tools.find(t=>t.id===id)).filter(Boolean);
+
+    const resultDiv = document.getElementById('agent-result');
+    const titleDiv = document.getElementById('agent-result-title');
+    const toolsDiv = document.getElementById('agent-result-tools');
+
+    if(!matched.length){
+      titleDiv.textContent = '暂未找到完全匹配的工具，建议你提交新工具或需求';
+      toolsDiv.innerHTML = `<button class="btn-primary" style="font-size:13px;padding:10px 20px" onclick="openSubmitDemand()">📋 提交需求</button>`;
+    } else {
+      titleDiv.textContent = `🎯 为你推荐 ${matched.length} 个工具`;
+      toolsDiv.innerHTML = matched.map(t => `
+        <div class="agent-result-tool" onclick="openToolDetail(${t.id})">
+          <div class="agent-result-tool-left">
+            <div class="agent-result-tool-icon" style="background:${t.color}20;border:1px solid ${t.color}40">${t.icon||'🔧'}</div>
+            <div>
+              <div class="agent-result-tool-name">${t.name}</div>
+              <div class="agent-result-tool-cat">${t.category}</div>
+            </div>
+          </div>
+          <button class="agent-result-tool-btn" onclick="event.stopPropagation();useTool(${t.id})">▶ 使用</button>
+        </div>`).join('');
+    }
+    resultDiv.style.display='block';
+  }, 1500);
+}
+
+// ===================================================================
+// MODAL HELPERS
+// ===================================================================
+function openModal(id){
+  document.getElementById(id).style.display='flex';
+  document.body.style.overflow='hidden';
+}
+function closeModal(id){
+  document.getElementById(id).style.display='none';
+  if(!['modal-detail','modal-edit','modal-submit-tool','modal-submit-demand','modal-use-choice'].some(m => document.getElementById(m)?.style.display==='flex')){
+    document.body.style.overflow='';
+  }
+}
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape'){
+    ['modal-detail','modal-edit','modal-submit-tool','modal-submit-demand','modal-use-choice'].forEach(closeModal);
+  }
+});
+
+// ===================================================================
+// INIT
+// ===================================================================
+function init(){
+  loadState();
+
+  // Hero counter animation
+  animateCounter(document.getElementById('stat-tools'), state.tools.length);
+  animateCounter(document.getElementById('stat-calls'), 236 + Math.floor(Math.random()*30));
+  animateCounter(document.getElementById('stat-users'), 238 + Math.floor(Math.random()*20));
+
+  renderTools();
+  renderStats();
+  renderDemandList();
+  renderActivityFeed();
+
+  // Auto-refresh activity feed
+  setInterval(addRandomActivity, 5000);
+}
+
+init();
+</script>
+</body>
+</html>
