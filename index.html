@@ -746,16 +746,7 @@ footer{padding:40px 24px;text-align:center;border-top:1px solid var(--border-sub
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-// ============================================================
-// SUPABASE CONFIG — 替换为你自己的 Supabase 项目信息
-// ============================================================
-const SUPABASE_URL  = 'https://oaifokhuqycfkiykxsbl.supabase.co/';   // 例如 https://oaifokhuqycfkiykxsbl.supabase.co/
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9haWZva2h1cXljZmtpeWt4c2JsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NjUzOTIsImV4cCI6MjA5NDA0MTM5Mn0.gaCvIcyQF8I5mH0c2CZxEloKpKMUOl-qIbfuNWlYWN8'; // 公开 anon key
-const _sb = (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON !== 'YOUR_SUPABASE_ANON_KEY')
-  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON) : null;
-
 // ============================================================
 // LOGO — loaded from base64 constant
 // ============================================================
@@ -860,28 +851,11 @@ function applyI18n(){
 }
 
 // ============================================================
-// API — Supabase cloud storage (with localStorage fallback)
+// API (DB-backed with localStorage fallback)
 // ============================================================
-const API = !!_sb;
-
-// Supabase helper: load shared state from 'app_state' table
-async function sbLoadState(){
-  if(!_sb) return null;
-  try{
-    const {data,error} = await _sb.from('app_state').select('payload').eq('id','main').single();
-    if(error || !data) return null;
-    return {ok:true, data: typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload};
-  }catch(e){console.warn('sbLoadState error',e); return null;}
-}
-
-// Supabase helper: save shared state to 'app_state' table (upsert)
-async function sbSaveState(payload){
-  if(!_sb) return false;
-  try{
-    const {error} = await _sb.from('app_state').upsert({id:'main', payload, updated_at: new Date().toISOString()});
-    return !error;
-  }catch(e){console.warn('sbSaveState error',e); return false;}
-}
+const API = (window.location.protocol!=='file:'&&window.location.hostname)?'/api':null;
+async function apiGet(p){ try{ const r=await fetch(API+p); return await r.json(); }catch(e){ return null; } }
+async function apiPost(p,b){ try{ const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}); return await r.json(); }catch(e){ return null; } }
 
 // ============================================================
 // DATA
@@ -947,7 +921,7 @@ async function idbDel(key){const db=await openIDB();return new Promise((ok,no)=>
 async function loadState(){
   // Force clear stale data from old versions with fake tools
   const DATA_VER_KEY=STORAGE_KEY+'_ver';
-  const CURRENT_VER='v4_memory';
+  const CURRENT_VER='v3_clean';
   if(localStorage.getItem(DATA_VER_KEY)!==CURRENT_VER){
     localStorage.removeItem(STORAGE_KEY);
     localStorage.setItem(DATA_VER_KEY,CURRENT_VER);
@@ -963,12 +937,11 @@ async function loadState(){
         // Merge: use saved version if exists, otherwise base
         S.tools=ALL_BASE.map(t=>savedMap[t.id]?{...savedMap[t.id]}:{...t});
         // Add user-created tools not in ALL_BASE (only by Hanson or 杨小丹)
-        sv.tools.forEach(t=>{if(!ALL_BASE.find(b=>b.id===t.id))S.tools.push({...t});});
+        sv.tools.forEach(t=>{if(!ALL_BASE.find(b=>b.id===t.id)&&(t.author==='Hanson'||t.author==='杨小丹'))S.tools.push({...t});});
       }
       if(sv.demands)S.demands=sv.demands;
       if(sv.comments)S.comments=sv.comments;
       if(sv.ratings)S.ratings=sv.ratings;
-      if(sv.activities&&sv.activities.length)S.activities=sv.activities;
     }
   }catch(e){console.warn('loadState localStorage error',e);}
   // Restore file dataUrls from IndexedDB
@@ -983,20 +956,18 @@ async function loadState(){
       }
     }
   }catch(e){console.warn('loadState IDB error',e);}
-  // Sync from Supabase cloud if available
+  // Sync from server if available
   if(API){
-    sbLoadState().then(r=>{
+    apiGet('/state').then(r=>{
       if(r&&r.ok&&r.data){
         const sd=r.data;
         if(sd.tools&&sd.tools.length){
           const savedMap={};sd.tools.forEach(t=>{savedMap[t.id]=t;});
           S.tools=ALL_BASE.map(t=>savedMap[t.id]||t);
-          sd.tools.forEach(t=>{if(!ALL_BASE.find(b=>b.id===t.id))S.tools.push(t);});
+          sd.tools.forEach(t=>{if(!ALL_BASE.find(b=>b.id===t.id)&&(t.author==='Hanson'||t.author==='杨小丹'))S.tools.push(t);});
         }
         if(sd.demands)S.demands=sd.demands;
         if(sd.comments)S.comments=sd.comments;
-        if(sd.ratings)S.ratings=sd.ratings;
-        if(sd.activities&&sd.activities.length)S.activities=sd.activities;
         renderAll();
       }
     }).catch(()=>{});
@@ -1018,11 +989,11 @@ async function saveState(){
     return t;
   });
   // 2. Save metadata (without large dataUrls) to localStorage
-  const payload={tools:toolsCopy,demands:S.demands,comments:S.comments,ratings:S.ratings,activities:S.activities.slice(0,50)};
+  const payload={tools:toolsCopy,demands:S.demands,comments:S.comments,ratings:S.ratings};
   try{localStorage.setItem(STORAGE_KEY,JSON.stringify(payload));}
   catch(e){console.warn('localStorage full, clearing old data');try{localStorage.removeItem(STORAGE_KEY);localStorage.setItem(STORAGE_KEY,JSON.stringify(payload));}catch(e2){}}
-  // 3. Sync to Supabase cloud for cross-user persistence
-  if(API) sbSaveState(payload).catch(()=>{});
+  // 3. Sync to server for cross-user persistence
+  if(API) apiPost('/state',payload).catch(()=>{});
 }
 
 // ============================================================
@@ -1106,8 +1077,8 @@ function useTool(id){
   const hasFiles=t.files&&t.files.length>0;
   const hasA=hasDown||hasFiles;
   if(hasUrl&&hasA){S.pendingTool=t;document.getElementById('choice-tool-name').textContent='▶ '+t.name;document.getElementById('choice-btn-file-sub').textContent=hasFiles?`${lang==='zh'?'下载':'Download'} ${t.files.length} ${lang==='zh'?'个文件':'file(s)'}`:t.downloadUrl.split('/').pop();openModal('modal-use-choice');}
-  else if(hasUrl){window.open(t.demoUrl,'_blank');addLog(t,'open',whoami());incCalls(id);S.activities=[{user:whoami(),action:{zh:'调用了',en:'used'},tool:t.name,time:lang==='zh'?'刚刚':'just now',type:'call'},...S.activities.slice(0,19)];renderActivity();saveState();}
-  else if(hasA){doDownload(t);addLog(t,'download',whoami());incCalls(id);S.activities=[{user:whoami(),action:{zh:'调用了',en:'used'},tool:t.name,time:lang==='zh'?'刚刚':'just now',type:'call'},...S.activities.slice(0,19)];renderActivity();saveState();}
+  else if(hasUrl){window.open(t.demoUrl,'_blank');addLog(t,'open',whoami());incCalls(id);S.activities=[{user:whoami(),action:{zh:'调用了',en:'used'},tool:t.name,time:lang==='zh'?'刚刚':'just now',type:'call'},...S.activities.slice(0,19)];renderActivity();}
+  else if(hasA){doDownload(t);addLog(t,'download',whoami());incCalls(id);S.activities=[{user:whoami(),action:{zh:'调用了',en:'used'},tool:t.name,time:lang==='zh'?'刚刚':'just now',type:'call'},...S.activities.slice(0,19)];renderActivity();}
   else if(t.installGuide){openDetail(id);toast(lang==='zh'?'请查看使用说明':'See usage guide','info');}
   else toast(lang==='zh'?'暂无可用链接或附件':'No URL or attachment available','warning');
 }
@@ -1124,7 +1095,7 @@ async function doDownload(t){
 }
 function choiceOpenUrl(){const t=S.pendingTool;if(!t) return;closeModal('modal-use-choice');window.open(t.demoUrl,'_blank');addLog(t,'open',whoami());incCalls(t.id);S.pendingTool=null;}
 function choiceDownload(){const t=S.pendingTool;if(!t) return;closeModal('modal-use-choice');doDownload(t);addLog(t,'download',whoami());incCalls(t.id);S.pendingTool=null;}
-function incCalls(id){const t=S.tools.find(x=>x.id===id);if(t)t.calls=(t.calls||0)+1;saveState();renderTools();renderRanking();renderStats();}
+function incCalls(id){const t=S.tools.find(x=>x.id===id);if(t)t.calls=(t.calls||0)+1;renderTools();renderRanking();}
 function whoami(){return AUTH?AUTH.name:(lang==='zh'?'访客':'Guest');}
 function whoamiColor(){return AUTH?AUTH.color:'#ec4899';}
 function toggleFav(id){
@@ -1132,7 +1103,7 @@ function toggleFav(id){
   if(S.favourites.has(id)){S.favourites.delete(id);toast(lang==='zh'?'已取消收藏':'Unfavourited','info');}
   else{S.favourites.add(id);toast(lang==='zh'?'已收藏 '+t.name:'Favourited '+t.name,'success');
     S.activities=[{user:whoami(),action:{zh:'收藏了',en:'starred'},tool:t.name,time:lang==='zh'?'刚刚':'just now',type:'fav'},...S.activities.slice(0,9)];
-    renderActivity();saveState();}
+    renderActivity();}
   renderTools();
 }
 
@@ -1347,18 +1318,17 @@ function notifLoad(){try{const r=localStorage.getItem(NOTIF_KEY);if(r){const p=J
 function notifSave(){localStorage.setItem(NOTIF_KEY,JSON.stringify({lastChecked:NOTIF.lastChecked,unread:NOTIF.unread,list:NOTIF.list.slice(0,50)}));}
 
 async function pollNotifications(){
-  if(!_sb)return;
+  if(!API)return;
   try{
-    const {data,error} = await _sb.from('notifications').select('*')
-      .gt('created_at', NOTIF.lastChecked).order('created_at',{ascending:false}).limit(20);
-    if(error||!data||!data.length){NOTIF.lastChecked=new Date().toISOString();return;}
+    const r=await apiGet('/tools/notifications?since='+encodeURIComponent(NOTIF.lastChecked));
+    if(!r||!r.ok||!r.data||!r.data.length){NOTIF.lastChecked=new Date().toISOString();return;}
     const me=whoami();
-    const newOnes=data.filter(n=>n.user_name&&n.user_name!==me);
+    const newOnes=r.data.filter(n=>n.userName&&n.userName!==me);
     if(newOnes.length){
       NOTIF.unread+=newOnes.length;
       newOnes.forEach(n=>{
-        NOTIF.list.unshift({id:n.id||Date.now(),toolName:n.tool_name||'New Tool',user:n.user_name||'Someone',time:n.created_at||new Date().toISOString(),read:false});
-        toast((lang==='zh'?'🆕 新工具：':'🆕 New tool: ')+(n.tool_name||'Tool')+(lang==='zh'?' — by ':' by ')+(n.user_name||'?'),'info',5000);
+        NOTIF.list.unshift({id:n.id||Date.now(),toolName:n.toolName||n.tool_name||'New Tool',user:n.userName||n.user_name||'Someone',time:n.createdAt||n.created_at||new Date().toISOString(),read:false});
+        toast((lang==='zh'?'🆕 新工具：':'🆕 New tool: ')+(n.toolName||'Tool')+(lang==='zh'?' — by ':' by ')+(n.userName||'?'),'info',5000);
       });
       const bell=document.getElementById('notif-btn');
       if(bell){bell.classList.add('notif-pulse');setTimeout(()=>bell.classList.remove('notif-pulse'),400);}
@@ -1413,11 +1383,11 @@ function clearNotifs(){NOTIF.list=[];NOTIF.unread=0;updateNotifBadge();renderNot
 // ============================================================
 async function addLog(tool,action,user,details=''){
   const entry={toolId:tool.id,toolName:tool.name,action,userName:user,details,time:new Date().toLocaleString('zh-CN',{hour12:false})};
-  if(_sb) _sb.from('tool_logs').insert({tool_id:tool.id,tool_name:tool.name,action,user_name:user,details}).then(()=>{}).catch(()=>{});
+  if(API) apiPost('/tools/logs',{toolId:tool.id,toolName:tool.name,action,userName:user,details});
   const k='logilogs_'+tool.id;const ex=JSON.parse(localStorage.getItem(k)||'[]');ex.unshift(entry);localStorage.setItem(k,JSON.stringify(ex.slice(0,100)));
 }
 async function fetchLogs(toolId){
-  if(_sb){try{const {data}=await _sb.from('tool_logs').select('*').eq('tool_id',toolId).order('created_at',{ascending:false}).limit(100);if(data&&data.length) return data.map(r=>({toolId:r.tool_id,toolName:r.tool_name,action:r.action,userName:r.user_name,details:r.details,createdAt:r.created_at}));}catch(e){}}
+  if(API){const r=await apiGet('/tools/logs/'+toolId);if(r&&r.ok&&r.data) return r.data;}
   return JSON.parse(localStorage.getItem('logilogs_'+toolId)||'[]');
 }
 function fmtLog(log){
@@ -1435,24 +1405,18 @@ function fmtLog(log){
 // RATINGS (DB-backed)
 // ============================================================
 async function loadAllRatings(){
-  if(!_sb) return;
-  try{
-    const {data}=await _sb.from('tool_ratings').select('*').order('created_at',{ascending:false});
-    if(data&&data.length){
-      const grouped={};
-      data.forEach(r=>{if(!grouped[r.tool_id])grouped[r.tool_id]=[];grouped[r.tool_id].push({userName:r.user_name,score:r.score,comment:r.comment,time:r.created_at});});
-      Object.entries(grouped).forEach(([id,list])=>{S.ratings[Number(id)]=list;});
-    }
-  }catch(e){}
+  if(!API) return;
+  const r=await apiGet('/tools/ratings');
+  if(r&&r.ok&&r.data){Object.entries(r.data).forEach(([id,g])=>{S.ratings[Number(id)]=(g.list||[]).map(x=>({userName:x.userName,score:x.score,comment:x.comment,time:x.createdAt}));});}
 }
 async function fetchRatings(toolId){
-  if(_sb){try{const {data}=await _sb.from('tool_ratings').select('*').eq('tool_id',toolId).order('created_at',{ascending:false});if(data){const l=data.map(r=>({userName:r.user_name,score:r.score,comment:r.comment,time:r.created_at}));return{ratings:l,avg:l.length?l.reduce((s,r)=>s+r.score,0)/l.length:0,count:l.length};}}catch(e){}}
+  if(API){const r=await apiGet('/tools/ratings/'+toolId);if(r&&r.ok&&r.data) return r.data;}
   const l=S.ratings[toolId]||[];return{ratings:l,avg:l.length?l.reduce((s,r)=>s+r.score,0)/l.length:0,count:l.length};
 }
 async function doSubmitRating(toolId,userName,score,comment){
   if(!score){toast(lang==='zh'?'请选择评分':'Please select a rating','warning');return;}
   const t=S.tools.find(x=>x.id===toolId);
-  if(_sb) await _sb.from('tool_ratings').insert({tool_id:toolId,user_name:userName||'匿名',score,comment}).catch(()=>{});
+  if(API) await apiPost('/tools/ratings',{toolId,userName:userName||'匿名',score,comment});
   if(!S.ratings[toolId])S.ratings[toolId]=[];
   S.ratings[toolId].unshift({userName:userName||'匿名',score,comment,time:new Date().toLocaleString('zh-CN',{hour12:false})});
   saveState();
@@ -1460,7 +1424,7 @@ async function doSubmitRating(toolId,userName,score,comment){
     addLog(t,'rate',userName||'匿名',`${score}★`);
     // Push to activity feed
     S.activities=[{user:userName||whoami(),action:{zh:`评价了 ${score}★`,en:`rated ${score}★`},tool:t.name,time:lang==='zh'?'刚刚':'just now',type:'rate'},...S.activities.slice(0,9)];
-    renderActivity();saveState();
+    renderActivity();
   }
   toast(`${lang==='zh'?'评分':'Rated'} ${score}★ ✓`,'success');
   openDetail(toolId);
@@ -1575,7 +1539,7 @@ function submitCmt(id){
   if(!S.comments[id])S.comments[id]=[];S.comments[id].push({author:author||'匿名',text:text.trim()});
   saveState();
   const t=S.tools.find(x=>x.id===id);
-  if(t){S.activities=[{user:author||whoami(),action:{zh:'评论了',en:'commented on'},tool:t.name,time:lang==='zh'?'刚刚':'just now',type:'rate'},...S.activities.slice(0,9)];renderActivity();saveState();}
+  if(t){S.activities=[{user:author||whoami(),action:{zh:'评论了',en:'commented on'},tool:t.name,time:lang==='zh'?'刚刚':'just now',type:'rate'},...S.activities.slice(0,9)];renderActivity();}
   toast(lang==='zh'?'评论已发布 ✓':'Comment posted ✓','success');openDetail(id);
 }
 async function dlAttach(toolId,fn){const t=S.tools.find(x=>x.id==toolId);if(!t)return;const f=(t.files||[]).find(x=>x.name===fn);if(!f){toast(fn+' not found','warning');return;}
@@ -1616,7 +1580,7 @@ function saveEditTool(){
   if(!name){toast(lang==='zh'?'工具名称不能为空':'Name required','warning');return;}
   const idx=S.tools.findIndex(t=>t.id===id);if(idx===-1)return;
   S.tools[idx]={...S.tools[idx],icon:document.getElementById('edit-icon').value||'🔧',name,category:document.getElementById('edit-category').value,description:document.getElementById('edit-desc').value,longDescription:document.getElementById('edit-longdesc').value,author:document.getElementById('edit-author').value,demoUrl:document.getElementById('edit-url').value,installGuide:document.getElementById('edit-guide').value,publishDate:document.getElementById('edit-publishdate').value,files:[...S.editAttach]};
-  saveState();addLog(S.tools[idx],'edit',whoami(),'更新工具信息');S.activities=[{user:whoami(),action:{zh:'编辑了',en:'edited'},tool:S.tools[idx].name,time:lang==='zh'?'刚刚':'just now',type:'upd'},...S.activities.slice(0,19)];renderActivity();saveState();
+  saveState();addLog(S.tools[idx],'edit',whoami(),'更新工具信息');S.activities=[{user:whoami(),action:{zh:'编辑了',en:'edited'},tool:S.tools[idx].name,time:lang==='zh'?'刚刚':'just now',type:'upd'},...S.activities.slice(0,19)];renderActivity();
   toast(`「${name}」${lang==='zh'?'已更新':'updated'} ✓`,'success');closeModal('modal-edit');renderTools();renderContrib();
 }
 function confirmDeleteTool(){
@@ -1633,7 +1597,7 @@ function renderStAttach(){const el=document.getElementById('st-attach-list');if(
 function saveNewTool(){
   const name=document.getElementById('st-name').value.trim();if(!name){toast(lang==='zh'?'工具名称不能为空':'Name required','warning');return;}
   const nt={id:Date.now(),icon:document.getElementById('st-icon').value||'🔧',name,category:document.getElementById('st-category').value,description:document.getElementById('st-desc').value,longDescription:document.getElementById('st-desc').value,demoUrl:document.getElementById('st-url').value,downloadUrl:'',author:document.getElementById('st-author').value||whoami(),version:'1.0.0',publishDate:document.getElementById('st-publishdate').value||new Date().toISOString().split('T')[0],hotness:'new',calls:0,rating:0,tags:[],keywords:[],installGuide:'',files:[...S.stAttach]};
-  S.tools.push(nt);saveState();addLog(nt,'create',whoami(),'新工具添加');S.activities=[{user:whoami(),action:{zh:'提交了',en:'submitted'},tool:nt.name,time:lang==='zh'?'刚刚':'just now',type:'new'},...S.activities.slice(0,19)];renderActivity();saveState();
+  S.tools.push(nt);saveState();addLog(nt,'create',whoami(),'新工具添加');S.activities=[{user:whoami(),action:{zh:'提交了',en:'submitted'},tool:nt.name,time:lang==='zh'?'刚刚':'just now',type:'new'},...S.activities.slice(0,19)];renderActivity();
   toast(`「${name}」${lang==='zh'?'已添加到百宝箱':'added to toolbox'} ✓`,'success');closeModal('modal-submit-tool');renderAll();
 }
 
@@ -1737,8 +1701,8 @@ function submitDemand(){
   const text=document.getElementById('demand-text').value.trim();if(!text){toast(lang==='zh'?'请描述你的需求':'Please describe your request','warning');return;}
   const nm=document.getElementById('demand-user-name').value.trim()||'匿名用户';
   const nd={id:Date.now(),user:nm,avatar:nm.slice(0,1),demand:text,votes:1,status:document.getElementById('demand-status').value,time:lang==='zh'?'刚刚':'just now'};
-  S.demands.unshift(nd);S.votedDemands.add(nd.id);S.activities=[{user:nm,action:{zh:"提交了需求",en:"submitted request"},tool:text.slice(0,20)+(text.length>20?"...":""),time:lang==="zh"?"刚刚":"just now",type:"new"},...S.activities.slice(0,49)];saveState();
-  toast(lang==='zh'?'需求已提交 ✓':'Request submitted ✓','success');closeModal('modal-submit-demand');renderDemand();renderActivity();
+  S.demands.unshift(nd);S.votedDemands.add(nd.id);saveState();
+  toast(lang==='zh'?'需求已提交 ✓':'Request submitted ✓','success');closeModal('modal-submit-demand');renderDemand();
 }
 
 // ============================================================
